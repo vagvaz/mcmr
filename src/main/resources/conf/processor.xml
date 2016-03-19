@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mcmapreduce>
+    <node>
+        <id>${node.hostname}</id>
+        <cluster>localcloud</cluster>
+        <public.ip>127.0.0.1</public.ip>
+        <interface>lo</interface>
+        <port>10000</port>
+    </node>
+    <kvs>
+        <type>leveldb</type>
+        <leveldb>
+            <blocksize>1</blocksize>
+            <cachesize>32</cachesize>
+        </leveldb>
+        <mapdb>
+
+        </mapdb>
+        <default.dir>/tmp/mcmapreduce/</default.dir>
+    </kvs>
+    <engine>
+        <processing>
+            <batch.threads.min>2</batch.threads.min>
+            <batch.threads.max>2</batch.threads.max>
+            <pipeline.threads.min>2</pipeline.threads.min>
+            <pipeline.threads.max>2</pipeline.threads.max>
+            <transfer.discard>false</transfer.discard>
+            <combiner.bypass>false</combiner.bypass>
+        </processing>
+        <communication>
+            <async.communication>true</async.communication>
+            <buffer.size.threshold>10</buffer.size.threshold>
+            <buffer.tuple.threshold>10</buffer.tuple.threshold>
+            <maintain.statistics>true</maintain.statistics>
+        </communication>
+        <mapreduce>
+            <combiner.percent>50</combiner.percent>
+            <combiner.size.threshold>20</combiner.size.threshold>
+            <combiner.tuple.threshold>2000</combiner.tuple.threshold>
+        </mapreduce>
+    </engine>
+    <network>
+        <mc>
+            <name>locacluster</name>
+            <node>127.0.0.1:10000</node>
+        </mc>
+    </network>
+</mcmapreduce>
