@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.netty.MCDataTransport;
 import org.apache.commons.collections.FastTreeMap;
+import rx.Subscriber;
 
 import java.util.Iterator;
 import java.util.List;
@@ -122,5 +123,10 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
+
     }
 }

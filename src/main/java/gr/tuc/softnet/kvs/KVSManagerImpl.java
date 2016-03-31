@@ -78,7 +78,7 @@ public class KVSManagerImpl implements KVSManager {
         return result;
     }
 
-    public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> getKVSProxy(String name) {
+    public <K extends WritableComparable, V extends Writable> KVSProxy<K, V> getKVSProxy(String name) {
         KVSProxy<K,V> result = null;
         KVSWrapper<K,V> wrapper= kvsWrapperMap.get(name);
         if(wrapper != null){

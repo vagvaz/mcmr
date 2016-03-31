@@ -21,7 +21,7 @@ public class NodeStatus implements Statusable {
     public NodeStatus(MCNode node){
         nodeID = node.getID();
         configuration = new HierarchicalConfiguration();
-        configuration.append(node.getConfiguration());
+        configuration.append(node.getConfiguration().conf());
     }
     public String getID() {
         return nodeID;

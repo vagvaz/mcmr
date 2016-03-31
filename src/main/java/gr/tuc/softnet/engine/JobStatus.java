@@ -21,14 +21,14 @@ public class JobStatus implements Statusable,IDable {
         this.id = job.getID();
         this.job = job;
         configuration = new HierarchicalConfiguration();
-        configuration.append(job.getConfiguration());
+        configuration.append(job.getConfiguration().conf());
     }
     public String getID() {
         return id;
     }
 
     public MCConfiguration getConfiguration() {
-        return configuration;
+        return job.getConfiguration();
     }
 
     public Configuration getStatus() {

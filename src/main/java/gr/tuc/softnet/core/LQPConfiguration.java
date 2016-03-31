@@ -292,5 +292,10 @@ public class LQPConfiguration implements MCConfiguration {
 //    this.conf().getProperties(configurationName);
   }
 
+  @Override
+  public String getURI() {
+    return null;
+  }
+
 
 }

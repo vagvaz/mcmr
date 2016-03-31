@@ -7,6 +7,7 @@ import gr.tuc.softnet.core.NodeStatus;
 import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.*;
 import gr.tuc.softnet.kvs.KVSManager;
+import gr.tuc.softnet.kvs.KVSProxy;
 import gr.tuc.softnet.kvs.KeyValueStore;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -276,12 +277,29 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override
-  public boolean startJob(List<MCNode> nodes, Configuration jobConfiguration) {
+  public void cancelTask(String id, String taskID) {
+
+  }
+
+
+
+  @Override
+  public boolean startJob(List<NodeStatus> nodes, JobConfiguration jobConfiguration) {
     return false;
   }
 
   @Override
-  public boolean cancelJob(List<MCNode> nodes, String jobID) {
+  public boolean startJob(JobConfiguration jobConfiguration) {
+    return false;
+  }
+
+  @Override
+  public boolean cancelJob(List<NodeStatus> nodes, String jobID) {
+    return false;
+  }
+
+  @Override
+  public boolean cancelJob(String jobID) {
     return false;
   }
 
@@ -301,6 +319,11 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override
+  public void taskCompleted(String jobID, String id) {
+
+  }
+
+  @Override
   public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> createKVS(String name, Configuration configuration) {
     return null;
   }
@@ -316,7 +339,7 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override
-  public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> getKVSProxy(String name) {
+  public <K extends WritableComparable, V extends Writable> KVSProxy<K, V> getKVSProxy(String name) {
     return null;
   }
 
@@ -371,7 +394,17 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override
-  public boolean startTask(Configuration taskConfiguration) {
+  public List<NodeStatus> getNodeStatus(List<String> microclouds) {
+    return null;
+  }
+
+//  @Override
+//  public boolean startTask(Configuration taskConfiguration) {
+//    return false;
+//  }
+
+  @Override
+  public boolean startTask(TaskConfiguration taskConfiguration) {
     return false;
   }
 
