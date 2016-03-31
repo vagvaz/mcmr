@@ -5,6 +5,7 @@ import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 import rx.Subscriber;
 
 import java.io.IOException;
@@ -58,6 +59,7 @@ public class MCFederationReduceTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTa
 
         reducerClass = configuration.getFederationReducerClass();
         reducer = initializeFederationReducer(reducerClass,keyClass,valueClass,outKeyClass,outValueClass);
+        Observable.create(inputStore).subscribe(subscriber);
     }
 
 

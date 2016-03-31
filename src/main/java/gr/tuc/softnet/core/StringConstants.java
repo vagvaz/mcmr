@@ -42,4 +42,6 @@ public class StringConstants {
   public static final String BATCH_TASK = "batchTask";
   public static java.lang.String SIZES_CACHE = "sizesCache";
   public static String PIPELINE = "pipeline";
+
+
 }

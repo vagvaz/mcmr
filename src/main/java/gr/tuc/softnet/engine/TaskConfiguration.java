@@ -15,12 +15,12 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class TaskConfiguration extends HierarchicalConfiguration {
 
 
-    public TaskConfiguration(){
+    public TaskConfiguration() {
         super();
     }
 
     public String getID() {
-       return getString(ConfStringConstants.TASK_ID);
+        return getString(ConfStringConstants.TASK_ID);
     }
 
     public String getNodeID() {
@@ -43,29 +43,31 @@ public class TaskConfiguration extends HierarchicalConfiguration {
         return (Class) getProperty(ConfStringConstants.KEY_CLASS);
     }
 
-    public void setKeyClass(Class keyClass){
-        setProperty(ConfStringConstants.KEY_CLASS,keyClass);
+    public void setKeyClass(Class keyClass) {
+        setProperty(ConfStringConstants.KEY_CLASS, keyClass);
     }
+
     public Class getValueClass() {
         return (Class) getProperty(ConfStringConstants.VALUE_CLASS);
     }
 
     public void setValueClass(Class valueClass) {
-        setProperty(ConfStringConstants.VALUE_CLASS,valueClass);
+        setProperty(ConfStringConstants.VALUE_CLASS, valueClass);
     }
 
     public String getOutput() {
         return getString(ConfStringConstants.TASK_OUTPUT);
     }
 
-    public void setOutput(String output){
-        setProperty(ConfStringConstants.TASK_OUTPUT,output);
+    public void setOutput(String output) {
+        setProperty(ConfStringConstants.TASK_OUTPUT, output);
     }
 
-    public void setInput(String input){
-        setProperty(ConfStringConstants.TASK_INPUT,input);
+    public void setInput(String input) {
+        setProperty(ConfStringConstants.TASK_INPUT, input);
     }
-    public String getInput(){
+
+    public String getInput() {
         return getString(ConfStringConstants.TASK_INPUT);
     }
 
@@ -76,6 +78,7 @@ public class TaskConfiguration extends HierarchicalConfiguration {
     public Class<? extends Reducer<?, ?, ?, ?>> getLocalReducerClass() {
         return (Class<? extends Reducer<?, ?, ?, ?>>) getProperty(ConfStringConstants.LOCAL_REDUCER_CLASS);
     }
+
     public Class<? extends Mapper<?, ?, ?, ?>> getMapClass() {
         return (Class) getProperty(ConfStringConstants.MAP_CLASS);
     }
@@ -83,38 +86,72 @@ public class TaskConfiguration extends HierarchicalConfiguration {
     public String getJar() {
         return getString(ConfStringConstants.JAR_NAME);
     }
-    public void setJar(String jar){
-        setProperty(ConfStringConstants.JAR_NAME,jar);
+
+    public void setJar(String jar) {
+        setProperty(ConfStringConstants.JAR_NAME, jar);
     }
 
-    public Class<? extends Partitioner<?,?>> getPartitionerClass() {
+    public Class<? extends Partitioner<?, ?>> getPartitionerClass() {
         return (Class<? extends Partitioner<?, ?>>) getProperty(ConfStringConstants.PARTITIONER_CLASS);
     }
-    public void setPartitionerClass(Class<? extends Partitioner<?,?>> partionerClass){
-        setProperty(ConfStringConstants.PARTITIONER_CLASS,partionerClass);
+
+    public void setPartitionerClass(Class<? extends Partitioner<?, ?>> partionerClass) {
+        setProperty(ConfStringConstants.PARTITIONER_CLASS, partionerClass);
     }
 
     public Class<? extends Reducer<?, ?, ?, ?>> getCombinerClass() {
         return (Class<? extends Reducer<?, ?, ?, ?>>) getProperty(ConfStringConstants.COMBINER_CLASS);
     }
 
-    public void setCombinerClass( Class<? extends Reducer<?, ?, ?, ?>> combinerClass){
-        setProperty(ConfStringConstants.COMBINER_CLASS,combinerClass);
+    public void setCombinerClass(Class<? extends Reducer<?, ?, ?, ?>> combinerClass) {
+        setProperty(ConfStringConstants.COMBINER_CLASS, combinerClass);
     }
 
     public Class<? extends WritableComparable> getOutKeyClass() {
         return (Class<? extends WritableComparable>) getProperty(ConfStringConstants.OUT_KEY_CLASS);
     }
 
-    public void setOutKeyClass(Class<? extends WritableComparable> outKeyClass ){
-        setProperty(ConfStringConstants.OUT_KEY_CLASS,outKeyClass);
+    public void setOutKeyClass(Class<? extends WritableComparable> outKeyClass) {
+        setProperty(ConfStringConstants.OUT_KEY_CLASS, outKeyClass);
     }
 
-    public Class<? extends Writable>  getOutValueClass() {
-        return (Class<? extends Writable>)getProperty(ConfStringConstants.OUT_VALUE_CLASS);
+    public Class<? extends Writable> getOutValueClass() {
+        return (Class<? extends Writable>) getProperty(ConfStringConstants.OUT_VALUE_CLASS);
     }
 
-    public void setOutValueClass(Class<? extends Writable> outValueClass){
-        setProperty(ConfStringConstants.OUT_VALUE_CLASS,outValueClass   );
+    public void setOutValueClass(Class<? extends Writable> outValueClass) {
+        setProperty(ConfStringConstants.OUT_VALUE_CLASS, outValueClass);
+    }
+
+    public boolean isMap() {
+        return getBoolean(ConfStringConstants.IS_MAP_TASK);
+    }
+
+    public void setMap(boolean isMap) {
+        setProperty(ConfStringConstants.IS_MAP_TASK, isMap);
+    }
+
+    public boolean isLocalReduce() {
+        return getBoolean(ConfStringConstants.IS_LOCAL_REDUCE);
+    }
+
+    public void setLocalReduce(boolean isLocalReduce) {
+        setProperty(ConfStringConstants.IS_LOCAL_REDUCE, isLocalReduce);
+    }
+
+    public boolean isFederationReduce() {
+        return getBoolean(ConfStringConstants.IS_FEDERATION_REDUCE);
+    }
+
+    public void setFederationReduce(boolean isFederationReduce) {
+        setProperty(ConfStringConstants.IS_FEDERATION_REDUCE, isFederationReduce);
+    }
+
+    public Class<?> getMapOutputKeyClass() {
+        return (Class<?>) getProperty(ConfStringConstants.MAP_OUTPUT_KEY_CLASS);
+    }
+
+    public void setMapOuputKeyClass(Class<? extends WritableComparable> keyClass) {
+        setProperty(ConfStringConstants.MAP_OUTPUT_KEY_CLASS, keyClass);
     }
 }

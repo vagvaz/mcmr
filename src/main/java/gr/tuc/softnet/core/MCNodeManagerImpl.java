@@ -9,6 +9,7 @@ import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.netty.MCDataTransport;
 import org.apache.commons.configuration.Configuration;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -106,12 +107,17 @@ public class MCNodeManagerImpl implements NodeManager, MCNode{
         dataTransport.initialize();
     }
 
+    @Override
+    public List<NodeStatus> getNodeStatus(List<String> microclouds) {
+        return null;
+    }
+
     public String getID() {
         return configuration.getNodeName();
     }
 
     public MCConfiguration getConfiguration() {
-        return configuration.conf();
+        return configuration;
     }
 
 }

@@ -13,6 +13,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Subscriber;
 
 import java.io.DataOutput;
 import java.io.File;
@@ -442,5 +443,10 @@ public class LevelDBIndex<K extends WritableComparable,V extends Writable> imple
 
   @Override public void finalize() {
     System.err.println("Finalize leveldb Index " + this.baseDirFile.toString());
+  }
+
+  @Override
+  public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
+    rx.Observable.create(this).subscribe(subscriber);
   }
 }

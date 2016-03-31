@@ -27,8 +27,13 @@ public class ConfStringConstants {
     public static final String PARTITIONER_CLASS = "taskPartitionerClass";
     public static final java.lang.String OUT_KEY_CLASS = "outKeyClass"  ;
     public static final String OUT_VALUE_CLASS = "outValueClass";
+    public static final String MAP_OUTPUT_KEY_CLASS = "mapOutputKeyClass"   ;
+    public static final String MAP_OUTPUT_VALUE_CLASS = "mapOutputValueClass"   ;
     public static String MAP_CLASS = "taskMapClass";
     public static String FEDERATION_REDUCER_CLASS = "taskFederationReducerClass";
     public static String LOCAL_REDUCER_CLASS = "taskLocalReducerClass";
     public static String COMBINER_CLASS = "taskCombinerClass";
+    public static final java.lang.String IS_MAP_TASK = "isMapTask";
+    public static java.lang.String IS_LOCAL_REDUCE = "isLocalReduce";
+    public static java.lang.String IS_FEDERATION_REDUCE = "iFederationReduce";
 }

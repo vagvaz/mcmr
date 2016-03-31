@@ -1,10 +1,15 @@
 package gr.tuc.softnet.mapred;
 
 import gr.tuc.softnet.engine.TaskConfiguration;
+import gr.tuc.softnet.engine.TaskStatus;
+import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KVSProxy;
+import gr.tuc.softnet.kvs.KeyValueStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.security.Credentials;
 
@@ -14,11 +19,20 @@ import java.net.URI;
 /**
  * Created by vagvaz on 10/03/16.
  */
-public class MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements  TaskInputOutputContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,MapContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,ReduceContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
+public class MCTaskContext<KEYIN extends WritableComparable, VALUEIN extends Writable, KEYOUT extends WritableComparable, VALUEOUT extends Writable> implements  TaskInputOutputContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,MapContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,ReduceContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
     TaskConfiguration configuration;
+    TaskStatus status;
     KVSProxy<KEYOUT,VALUEOUT> output;
+    KeyValueStore input;
     private Configuration hadoopConfiguration;
 
+    public MCTaskContext(TaskConfiguration configuration, KVSManager kvsManager) {
+        this.configuration = configuration;
+        status = new TaskStatus(configuration);
+        hadoopConfiguration = new Configuration();
+        output = kvsManager.getKVSProxy(configuration.getOutput());
+        input = kvsManager.getKVS(configuration.getInput());
+    }
 
 
     @Override
@@ -38,7 +52,7 @@ public class MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements  TaskInp
 
     @Override
     public void write(KEYOUT key, VALUEOUT value) throws IOException, InterruptedException {
-
+        output.put(key,value);
     }
 
     @Override
@@ -53,12 +67,12 @@ public class MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements  TaskInp
 
     @Override
     public void setStatus(String msg) {
-
+        status.setMessage(msg);
     }
 
     @Override
     public String getStatus() {
-        return null;
+        return status.getMessage();
     }
 
     @Override
@@ -103,27 +117,27 @@ public class MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements  TaskInp
 
     @Override
     public Class<?> getOutputKeyClass() {
-        return null;
+        return configuration.getOutKeyClass();
     }
 
     @Override
     public Class<?> getOutputValueClass() {
-        return null;
+        return configuration.getOutValueClass();
     }
 
     @Override
     public Class<?> getMapOutputKeyClass() {
-        return null;
+        return configuration.getMapOutputKeyClass();
     }
 
     @Override
     public Class<?> getMapOutputValueClass() {
-        return null;
+        return configuration.getMapOutputKeyClass();
     }
 
     @Override
     public String getJobName() {
-        return null;
+        return configuration.getJobID();
     }
 
     @Override
@@ -275,15 +289,15 @@ public class MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements  TaskInp
     }
 
     public boolean isPipelined(){
-        return false;
+        return !configuration.isBatch();
     }
 
-    public boolean isReduceLocal(){
-        return false;
+    public boolean isLocalReduce(){
+        return configuration.isLocalReduce();
     }
 
     public boolean isMap(){
-        return false;
+        return configuration.isMap();
     }
 
     @Override

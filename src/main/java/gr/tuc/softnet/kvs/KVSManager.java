@@ -13,7 +13,7 @@ public interface KVSManager extends MCInitializable {
    < K extends WritableComparable, V extends Writable> KeyValueStore<K,V> createKVS(String name, Configuration configuration);
     boolean destroyKVS(String name);
     < K extends WritableComparable, V extends Writable> KeyValueStore<K,V> getKVS(String name);
-    < K extends WritableComparable, V extends Writable> KeyValueStore<K,V> getKVSProxy(String name);
+    < K extends WritableComparable, V extends Writable> KVSProxy<K,V> getKVSProxy(String name);
 
 
 }

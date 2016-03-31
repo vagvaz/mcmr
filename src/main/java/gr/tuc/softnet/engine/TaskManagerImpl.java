@@ -26,6 +26,7 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Inject
     MCDataTransport dataTransport;
 
+
     ExecutorService batchExecutor;
     ExecutorService pipeTaskExecutor;
 

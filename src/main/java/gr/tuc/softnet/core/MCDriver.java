@@ -10,6 +10,7 @@ import gr.tuc.softnet.engine.MCNode;
 public class MCDriver {
     public static void main(String[] args) {
         Injector injector = Guice.createInjector(new MCNodeModule());
+        InjectorUtils.setInjector(injector);
         NodeManager nodemanager = injector.getInstance(NodeManager.class);
         if(args.length > 0 ) {
             nodemanager.initialize(args[0]);

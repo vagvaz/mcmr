@@ -14,6 +14,7 @@ import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.slf4j.LoggerFactory;
+import rx.*;
 import sun.net.www.content.text.Generic;
 
 import java.io.File;
@@ -25,7 +26,8 @@ import java.util.*;
  * Created by vagvaz on 10/11/15.
  */
 public class MapDBIndex<K extends WritableComparable,V extends Writable> implements KeyValueStore<K,V> {
-  private  KVSConfiguration configuration;
+
+    private  KVSConfiguration configuration;
   private DB theDb;
     private
  BTreeMap<K, Integer> keysDB;
@@ -366,4 +368,8 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
     System.err.println("Finalize leveldb Index " + this.baseDirFile.toString());
   }
 
+    @Override
+    public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
+        rx.Observable.create(this).subscribe(subscriber);
+    }
 }

@@ -58,6 +58,7 @@ public class MCReduceLocalTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBas
 
         reducerClass = configuration.getLocalReducerClass();
         reducer = initializeLocalReducer(reducerClass,keyClass,valueClass,outKeyClass,outValueClass);
+        Observable.create(inputStore).subscribe(subscriber);
     }
 
 

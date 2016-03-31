@@ -1,13 +1,9 @@
 package gr.tuc.softnet.engine;
 
-import com.google.common.reflect.TypeParameter;
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.mapred.TaskState;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
-import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 import java.io.Serializable;
@@ -27,11 +23,10 @@ public class TaskStatus implements Statusable,IDable,Serializable {
     private Throwable errorException =null;
     private TaskState state;
 
-    public TaskStatus(MCTask task){
-        taskID = task.getID();
-        this.task = task;
+    public TaskStatus(TaskConfiguration taskConf){
+        taskID = taskConf.getID();
         configuration = new HierarchicalConfiguration();
-        configuration.append(task.getTaskConfiguration());
+        configuration.append(taskConf);
         readStatistics = new SummaryStatistics();
         processedStatistics = new SummaryStatistics();
         writeStatistics = new SummaryStatistics();
@@ -99,5 +94,12 @@ public class TaskStatus implements Statusable,IDable,Serializable {
     }
     public void getState(TaskState state){
         this.state = state;
+    }
+
+    public void setMessage(String msg) {
+        configuration.setProperty("message",msg);
+    }
+    public String getMessage(){
+        return  configuration.getString("message");
     }
 }

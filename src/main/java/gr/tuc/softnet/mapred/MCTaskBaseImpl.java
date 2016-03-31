@@ -1,6 +1,7 @@
 package gr.tuc.softnet.mapred;
 
 import com.google.inject.Inject;
+import gr.tuc.softnet.core.ConfigurationUtilities;
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
@@ -8,17 +9,26 @@ import gr.tuc.softnet.engine.TaskStatus;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KVSProxy;
 import gr.tuc.softnet.kvs.KeyValueStore;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by vagvaz on 08/03/16.
  */
-public abstract class MCTaskBaseImpl<INKEY,INVALUE,OUTKEY,OUTVALUE> implements MCTask, Observable.OnSubscribe<MCTask> {
+public abstract class MCTaskBaseImpl<INKEY extends WritableComparable,INVALUE extends Writable,OUTKEY extends WritableComparable,OUTVALUE extends Writable> implements MCTask, Observable.OnSubscribe<MCTask> {
     @Override
     public void call(Subscriber<? super MCTask> subscriber) {
         subscribers.add(subscriber);
@@ -39,6 +49,7 @@ public abstract class MCTaskBaseImpl<INKEY,INVALUE,OUTKEY,OUTVALUE> implements M
     Class<INVALUE> valueClass;
     Class<OUTKEY> outKeyClass;
     Class<OUTVALUE> outValueClass;
+    Logger logger = LoggerFactory.getLogger(this.getClass());
     @Override
     public boolean start() {
 
@@ -48,11 +59,12 @@ public abstract class MCTaskBaseImpl<INKEY,INVALUE,OUTKEY,OUTVALUE> implements M
     @Override
     public void initialize(TaskConfiguration configuration) {
         this.configuration = configuration;
+        taskContext = new MCTaskContext<INKEY,INVALUE,OUTKEY,OUTVALUE>(configuration,kvsManager);
         keyClass = configuration.getKeyClass();
         valueClass = configuration.getValueClass();
         outKeyClass = (Class<OUTKEY>) configuration.getOutKeyClass();
         outValueClass= (Class<OUTVALUE>) configuration.getOutValueClass();
-        status = new TaskStatus(this);
+        status = new TaskStatus(configuration);
         subscribers = new ArrayList<>();
         inputStore = kvsManager.getKVS(configuration.getInput());
         outputProxy = (KVSProxy) kvsManager.getKVSProxy(configuration.getOutput());
@@ -170,8 +182,44 @@ public abstract class MCTaskBaseImpl<INKEY,INVALUE,OUTKEY,OUTVALUE> implements M
     public MCMapper<INKEY, INVALUE, OUTKEY, OUTVALUE> initializeMapper(Class mapperClass, Class keyClass, Class valueClass, Class outKeyClass, Class outValueClass) {
         MCMapper<INKEY,INVALUE,OUTKEY,OUTVALUE> result = null; //TODOread from class loader initialize install
         try {
+            ClassLoader classLoader = null;
+            try {
+                classLoader = ConfigurationUtilities.getClassLoaderFor(taskContext.getJar());
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
 
+
+            //    ConfigurationUtilities.addToClassPath(jarFileName);
+            //      .addToClassPath(System.getProperty("java.io.tmpdir") + "/leads/plugins/" + plugName
+            //                        + ".jar");
+
+            //    byte[] config = (byte[]) cache.get(plugName + ":conf");
+
+
+            //    String className = (String) cache.get(plugName + ":className");
+            if (mapperClass.getCanonicalName() != null && !mapperClass.getCanonicalName().equals("")) {
+                try {
+//                    Class<?> mapperClass = Class.forName(mapperClassName, true, classLoader);
+                    Constructor<?> con = mapperClass.getConstructor();
+                    result = (MCMapper) con.newInstance();
+                    //        mapper.initialize(pluginConfig, imanager);
+//                } catch (ClassNotFoundException e) {
+//                    e.printStackTrace();
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                logger.error("Could not find the name for " + mapperClass.getCanonicalName());
+            }
             result.setup(result.getMapContext(taskContext));
+            return result;
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

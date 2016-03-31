@@ -45,7 +45,7 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
         public void onNext(Map.Entry<INKEY, INVALUE> entry) {
             try {
                 mapper.map(entry.getKey(),entry.getValue(),context);
-            } catch (IOException e) {
+            } catch (IOException e) {Observable.create(inputStore).subscribe(subscriber);
                 status.setException(e);
                 inputEnabled = false;
                 e.printStackTrace();
@@ -62,6 +62,7 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
 
         mapperClass = configuration.getMapClass();
         mapper = initializeMapper(mapperClass,keyClass,valueClass,outKeyClass,outValueClass);
+        Observable.create(inputStore).subscribe(subscriber);
     }
 
 
