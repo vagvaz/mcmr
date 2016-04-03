@@ -20,12 +20,12 @@
     </kvs>
     <engine>
         <processing>
-            <batch.threads.min>2</batch.threads.min>
-            <batch.threads.max>2</batch.threads.max>
-            <pipeline.threads.min>2</pipeline.threads.min>
-            <pipeline.threads.max>2</pipeline.threads.max>
-            <transfer.discard>false</transfer.discard>
-            <combiner.bypass>false</combiner.bypass>
+            <batch_threads_min>2</batch_threads_min>
+            <batch_threads_max>2</batch_threads_max>
+            <pipeline_threads_min>2</pipeline_threads_min>
+            <pipeline_threads_max>2</pipeline_threads_max>
+            <transfer_discard>false</transfer_discard>
+            <combiner_bypass>false</combiner_bypass>
         </processing>
         <communication>
             <async.communication>true</async.communication>

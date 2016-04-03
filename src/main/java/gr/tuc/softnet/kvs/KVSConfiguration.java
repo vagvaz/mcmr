@@ -29,49 +29,55 @@ public class KVSConfiguration extends HierarchicalConfiguration {
         this.append(configuration);
 
     }
-    boolean isMaterialized(){
+    public void setCacheType(String type){
+        setProperty(ConfStringConstants.CACHE_TYPE,type);
+    }
+    public String getCacheType(){
+        return (String) getProperty(ConfStringConstants.CACHE_TYPE);
+    }
+    public boolean isMaterialized(){
         return getBoolean(ConfStringConstants.CACHE_MATERIALIZED,true);
     }
-    void setMaterialized(boolean materialized){
+    public void setMaterialized(boolean materialized){
         setProperty(ConfStringConstants.CACHE_MATERIALIZED,materialized);
     }
-    boolean isLocal(){
+    public boolean isLocal(){
         return getBoolean(ConfStringConstants.LOCAL_CACHE,defaultIsLocal);
     }
 
-    void setLocal(boolean local){
+    public void setLocal(boolean local){
         setProperty(ConfStringConstants.LOCAL_CACHE,local);
     }
 
-    String getName(){
+    public String getName(){
         return getString(ConfStringConstants.CACHE_NAME);
     }
 
-    void setName(String name){
+    public void setName(String name){
         setProperty(ConfStringConstants.CACHE_NAME,name);
     }
 
-    String getBaseDir(){
+    public String getBaseDir(){
         return getString(ConfStringConstants.KVS_BASE_DIR, defaultBaseDir);
     }
 
-    void setBaseDir(String baseDir){
+    public void setBaseDir(String baseDir){
         setProperty(ConfStringConstants.KVS_BASE_DIR,baseDir);
     }
 
-    public String getValueClass() {
-        return getString(ConfStringConstants.VALUE_CLASS);
+    public Class<?> getValueClass() {
+        return (Class<?>) getProperty(ConfStringConstants.VALUE_CLASS);
     }
 
-    public String getKeyClass() {
-        return getString(ConfStringConstants.KEY_CLASS);
+    public Class<? extends Comparable> getKeyClass() {
+        return (Class<? extends Comparable>) getProperty(ConfStringConstants.KEY_CLASS);
     }
 
-    public void setValueClass(String valueClass) {
+    public void setValueClass(Class<?> valueClass) {
         setProperty(ConfStringConstants.VALUE_CLASS,valueClass);
     }
 
-    public void setKeyClass(String keyClass) {
+    public void setKeyClass(Class<? extends Comparable> keyClass) {
        setProperty(ConfStringConstants.KEY_CLASS,keyClass);
     }
 }

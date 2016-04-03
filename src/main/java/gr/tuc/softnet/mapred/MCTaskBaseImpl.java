@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Created by vagvaz on 08/03/16.
  */
-public abstract class MCTaskBaseImpl<INKEY extends WritableComparable,INVALUE extends Writable,OUTKEY extends WritableComparable,OUTVALUE extends Writable> implements MCTask, Observable.OnSubscribe<MCTask> {
+public abstract class MCTaskBaseImpl<INKEY extends WritableComparable,INVALUE extends Writable,OUTKEY extends WritableComparable,OUTVALUE extends Writable> implements MCTask,Observable.OnSubscribe<MCTask> {
     @Override
     public void call(Subscriber<? super MCTask> subscriber) {
         subscribers.add(subscriber);

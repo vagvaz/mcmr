@@ -2,6 +2,7 @@ package gr.tuc.softnet.kvs;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import gr.tuc.softnet.core.InjectorUtils;
 import gr.tuc.softnet.netty.MCDataTransport;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.configuration.Configuration;
@@ -27,7 +28,7 @@ public class KVSManagerImpl implements KVSManager {
 
 
     public void initialize(){
-        factory = new KVSFactory();
+        factory = new KVSFactory(dataTransport.getConfiguration());
         kvsWrapperMap = new HashedMap();
     }
 

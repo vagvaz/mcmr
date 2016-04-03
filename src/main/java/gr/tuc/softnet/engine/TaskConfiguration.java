@@ -2,7 +2,10 @@ package gr.tuc.softnet.engine;
 
 import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.core.StringConstants;
+import gr.tuc.softnet.mapred.MCMapper;
+import gr.tuc.softnet.mapred.WordCountMapper;
 import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -18,7 +21,9 @@ public class TaskConfiguration extends HierarchicalConfiguration {
     public TaskConfiguration() {
         super();
     }
-
+    public void setID(String id){
+        setProperty(ConfStringConstants.TASK_ID, id);
+    }
     public String getID() {
         return getString(ConfStringConstants.TASK_ID);
     }
@@ -31,12 +36,13 @@ public class TaskConfiguration extends HierarchicalConfiguration {
         return getString(ConfStringConstants.COORDINATOR);
     }
 
+    public void setJobID(String jobID){setProperty(ConfStringConstants.JOB_ID,jobID);}
     public String getJobID() {
         return getString(ConfStringConstants.JOB_ID);
     }
 
     public boolean isBatch() {
-        return getString(ConfStringConstants.TASK_TYPE).equals(StringConstants.BATCH_TASK);
+        return getString(ConfStringConstants.TASK_TYPE,StringConstants.BATCH_TASK).equals(StringConstants.BATCH_TASK);
     }
 
     public Class getKeyClass() {
@@ -153,5 +159,17 @@ public class TaskConfiguration extends HierarchicalConfiguration {
 
     public void setMapOuputKeyClass(Class<? extends WritableComparable> keyClass) {
         setProperty(ConfStringConstants.MAP_OUTPUT_KEY_CLASS, keyClass);
+    }
+
+    public void setMapOutputValueClass(Class<? extends Writable> classValue) {
+        setProperty(ConfStringConstants.MAP_OUTPUT_VALUE_CLASS,classValue);
+    }
+
+    public void setMapperClass(Class<? extends MCMapper> mapperClass) {
+        setProperty(ConfStringConstants.MAP_CLASS, mapperClass);
+    }
+    public Class<? extends MCMapper> getMapperClass()
+    {
+        return (Class<? extends MCMapper>) getProperty(ConfStringConstants.MAP_CLASS);
     }
 }

@@ -24,7 +24,9 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
 
 
     org.slf4j.Logger logger = LoggerFactory.getLogger(MCFederationReduceTask.class);
+    public MCMapTask(){
 
+    }
 
     private Mapper<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context context;
     Subscriber<Map.Entry<INKEY,INVALUE>> subscriber = new Subscriber<Map.Entry<INKEY, INVALUE>>() {
@@ -45,7 +47,8 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
         public void onNext(Map.Entry<INKEY, INVALUE> entry) {
             try {
                 mapper.map(entry.getKey(),entry.getValue(),context);
-            } catch (IOException e) {Observable.create(inputStore).subscribe(subscriber);
+            } catch (IOException e) {
+                Observable.create(inputStore).subscribe(subscriber);
                 status.setException(e);
                 inputEnabled = false;
                 e.printStackTrace();
@@ -59,10 +62,11 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
 
 
     public void initialize(TaskConfiguration configuration){
-
+        super.initialize(configuration);
         mapperClass = configuration.getMapClass();
         mapper = initializeMapper(mapperClass,keyClass,valueClass,outKeyClass,outValueClass);
-        Observable.create(inputStore).subscribe(subscriber);
+        Observable ob = Observable.create(inputStore);
+        ob.subscribe(subscriber);
     }
 
 
@@ -100,7 +104,7 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
 
     @Override
     public boolean enabledInput() {
-        return false;
+        return inputEnabled;
     }
 
 }

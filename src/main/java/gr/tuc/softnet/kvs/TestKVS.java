@@ -1,34 +1,39 @@
 package gr.tuc.softnet.kvs;
 
+import org.apache.commons.collections.map.HashedMap;
+import rx.Observable;
 import rx.Subscriber;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Created by vagvaz on 25/02/16.
+ * Created by vagvaz on 03/04/16.
  */
-public class PipelinedKeyValueStore<K, V> implements KeyValueStore<K, V>  {
-    List<Subscriber<? super Map.Entry<K, V>>> subscribers;
-    public PipelinedKeyValueStore(String defaultBaseDir, String name) {
+public class TestKVS<K,V> implements KeyValueStore<K,V> {
+    Map<K,V> map;
+    public TestKVS(){
+        super();
+        map = new HashedMap();
     }
-
     @Override
     public void flush() {
 
     }
 
+    @Override
     public void put(K key, V value) {
-
+        map.put(key,value);
     }
 
+    @Override
     public V get(K key) {
-        return null;
+       return map.get(key);
     }
 
+    @Override
     public int size() {
-        return 0;
+       return  map.size();
     }
 
     @Override
@@ -41,35 +46,28 @@ public class PipelinedKeyValueStore<K, V> implements KeyValueStore<K, V>  {
         return null;
     }
 
-    public Iterator<K> keysIterator() {
-        return null;
-    }
-
-    public Iterator<V> valuesIterator() {
-        return null;
-    }
-
+    @Override
     public Iterable<Map.Entry<K, V>> iterator() {
-        return null;
+      return  map.entrySet();
     }
 
+    @Override
     public boolean contains(K key) {
-        return false;
+        return map.containsKey(key);
     }
 
+    @Override
     public void close() {
 
     }
 
     @Override
     public String getName() {
-        return null;
+        return "testInput";
     }
-
-
 
     @Override
     public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
-        subscribers.add(subscriber);
+        Observable.from(this.iterator()).subscribe(subscriber);
     }
 }

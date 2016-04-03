@@ -9,13 +9,11 @@ import gr.tuc.softnet.core.WritableSerializer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.serializer.Serializer;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.slf4j.LoggerFactory;
 import rx.*;
-import sun.net.www.content.text.Generic;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,14 +61,14 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
 
        keyClass = null;
       try {
-          keyClass = (Class<K>) this.getClass().getClassLoader().loadClass(configuration.getKeyClass());
-      } catch (ClassNotFoundException e) {
+          keyClass = (Class<K>)  configuration.getKeyClass();//this.getClass().getClassLoader().loadClass(configuration.getKeyClass());
+      } catch (Exception e) {
           e.printStackTrace();
       }
        valueClass = null;
       try {
-          valueClass = (Class<V>) this.getClass().getClassLoader().loadClass(configuration.getValueClass());
-      } catch (ClassNotFoundException e) {
+          valueClass = (Class<V>) configuration.getValueClass();//this.getClass().getClassLoader().loadClass(configuration.getValueClass());
+      } catch (Exception e) {
           e.printStackTrace();
       }
 
@@ -128,8 +126,8 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
         configuration.setLocal(true);
         configuration.setBaseDir("/tmp/testdb");
         configuration.setMaterialized(true);
-        configuration.setKeyClass(Text.class.getCanonicalName());
-        configuration.setValueClass(Text.class.getCanonicalName());
+        configuration.setKeyClass(Text.class);
+        configuration.setValueClass(Text.class);
       MapDBIndex<Text,Text> index = new MapDBIndex(configuration);
         Text t = null;
       if (t == null)
@@ -308,7 +306,7 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
         return null;
     }
 
-    public Iterator<Map.Entry<K, V>> iterator() {
+    public Iterable<Map.Entry<K, V>> iterator() {
         return null;
     }
 

@@ -95,7 +95,7 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
 
 
 
-    public Iterator<Map.Entry<K, V>> iterator() {
+    public Iterable<Map.Entry<K, V>> iterator() {
         KeyValueStore localKVS = kvsManager.getKVS(name);
         return localKVS.iterator();
     }

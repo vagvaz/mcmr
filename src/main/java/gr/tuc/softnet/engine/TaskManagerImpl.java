@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * Created by vagvaz on 03/03/16.
  */
 public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
-    Map<String,MCTask> taskInfo;
+    Map<String, MCTask> taskInfo;
     @Inject
     JobManager jobManager;
     @Inject
@@ -33,12 +33,12 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Override
     public boolean startTask(TaskConfiguration taskConfiguration) {
         MCTask task = TaskUtils.createTask(taskConfiguration);
-        ((Observable<MCTask>)task).subscribe(this);
+        Observable.create((Observable.OnSubscribe<MCTask>)task).subscribe(this);
 
         taskInfo.put(task.getID(), task);
-        if(task.getTaskConfiguration().isBatch()){
+        if (task.getTaskConfiguration().isBatch()) {
             batchExecutor.submit(task);
-        }else{
+        } else {
             pipeTaskExecutor.submit(task);
         }
         return true;
@@ -47,9 +47,9 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Override
     public TaskStatus getTaskStatus(String taskID) {
         MCTask task = taskInfo.get(taskID);
-        if(task == null) {
+        if (task == null) {
             return null;
-        }else{
+        } else {
             return task.getStatus();
         }
     }
@@ -57,9 +57,9 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Override
     public boolean cancelTask(String taskID) {
         MCTask task = taskInfo.get(taskID);
-        if(task == null) {
+        if (task == null) {
             return false;
-        }else{
+        } else {
             return task.cancel();
         }
     }
@@ -67,16 +67,16 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Override
     public void waitForTaskCompletion(String taskID) {
         MCTask task = taskInfo.get(taskID);
-        if(task == null) {
+        if (task == null) {
             return;
-        }else{
+        } else {
             task.waitForCompletion();
         }
     }
 
     @Override
     public String getID() {
-        return configuration.conf().getString(ConfStringConstants.TASK_MANAGER_ID,configuration.getNodeName()+".taskManager");
+        return configuration.conf().getString(ConfStringConstants.TASK_MANAGER_ID, configuration.getNodeName() + ".taskManager");
     }
 
     @Override
@@ -87,10 +87,10 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     @Override
     public void initialize() {
         taskInfo = new HashedMap();
-        configuration.conf().setProperty(ConfStringConstants.TASK_MANAGER_ID,configuration.getNodeName()+".taskManager");
-        batchExecutor = new ThreadPoolExecutor(configuration.conf().getInt("engine.processing.batch.threads.min"),configuration.conf().getInt("engine.processing.batch.threads.max"),2000,
+        configuration.conf().setProperty(ConfStringConstants.TASK_MANAGER_ID, configuration.getNodeName() + ".taskManager");
+        batchExecutor = new ThreadPoolExecutor(configuration.conf().getInt("engine.processing.batch_threads_min"), configuration.conf().getInt("engine.processing.batch_threads_max"), 2000,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        pipeTaskExecutor = new ThreadPoolExecutor(configuration.conf().getInt("engine.processing.pipeline.threads.min"),configuration.conf().getInt("engine.processing.pipeline.threads.max"),2000,
+        pipeTaskExecutor = new ThreadPoolExecutor(configuration.conf().getInt("engine.processing.pipeline_threads_min"), configuration.conf().getInt("engine.processing.pipeline_threads_max"), 2000,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     }
 
@@ -111,10 +111,10 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
 
     private void complete(MCTask mcTask) {
         String coordinator = mcTask.getTaskConfiguration().getCoordinator();
-        if(coordinator.equals(getConfiguration().getNodeName()) || coordinator.equals(getConfiguration().getURI())){
-            jobManager.taskCompleted(mcTask.getTaskConfiguration().getJobID(),mcTask.getTaskConfiguration().getID());
-        }else{
-            dataTransport.taskCompleted(mcTask.getTaskConfiguration().getCoordinator(),mcTask.getTaskConfiguration().getID());
+        if (coordinator.equals(getConfiguration().getNodeName()) || coordinator.equals(getConfiguration().getURI())) {
+            jobManager.taskCompleted(mcTask.getTaskConfiguration().getJobID(), mcTask.getTaskConfiguration().getID());
+        } else {
+            dataTransport.taskCompleted(mcTask.getTaskConfiguration().getCoordinator(), mcTask.getTaskConfiguration().getID());
         }
     }
 }

@@ -18,7 +18,7 @@ public interface KeyValueStore<K,V> extends Observable.OnSubscribe<Map.Entry<K,V
     int size();
     Iterable<Map.Entry<K, Integer>> getKeysIterator();
     Iterator<V> getKeyIterator(K key, Integer counter);
-    Iterator<Map.Entry<K,V>> iterator();
+    Iterable<Map.Entry<K, V>> iterator();
     boolean contains(K key);
     void close();
     String getName();

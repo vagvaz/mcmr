@@ -2,6 +2,7 @@ package gr.tuc.softnet.engine;
 
 
 import gr.tuc.softnet.mapred.TaskState;
+import rx.Observable;
 
 /**
  * Created by vagvaz on 10/02/16.
