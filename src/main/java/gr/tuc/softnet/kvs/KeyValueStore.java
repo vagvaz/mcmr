@@ -13,7 +13,7 @@ public interface KeyValueStore<K,V> extends Observable.OnSubscribe<Map.Entry<K,V
     //    ;
     void flush();
 
-    void put(K key, V value);
+    void put(K key, V value) throws Exception;
     V get(K key);
     int size();
     Iterable<Map.Entry<K, Integer>> getKeysIterator();  // Don't implement

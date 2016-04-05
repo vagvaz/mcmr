@@ -41,8 +41,8 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
     }
     list.add(value);
 
-    if (size.getAndIncrement() >= configuration.getBatchSize()) {
-      flush();
+    if (size.incrementAndGet() >= configuration.getBatchSize()) {
+      doFlush();
     }
   }
 

@@ -3,7 +3,7 @@ package gr.tuc.softnet.kvs;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public class PipelineSingleKVS<K extends WritableComparable, V extends Writable>
       kvs.put(key, value);
     }
     if (kvs.size() >= configuration.getBatchSize()) {
-      flush();
+      doFlush();
     }
   }
 
@@ -67,8 +67,6 @@ public class PipelineSingleKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public Iterable<Map.Entry<K, V>> iterator() {
-    // For batch this will be called only once! If someone tries to write after this is called,
-    // throw an exception.
     return kvs.entrySet();
   }
 

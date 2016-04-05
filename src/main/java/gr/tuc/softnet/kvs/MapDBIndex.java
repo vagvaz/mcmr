@@ -3,9 +3,7 @@ package gr.tuc.softnet.kvs;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import gr.tuc.softnet.core.PrintUtilities;
-import gr.tuc.softnet.core.WritableComparableSerializer;
-import gr.tuc.softnet.core.WritableSerializer;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -13,40 +11,48 @@ import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.slf4j.LoggerFactory;
-import rx.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import gr.tuc.softnet.core.PrintUtilities;
+import gr.tuc.softnet.core.WritableComparableSerializer;
+import gr.tuc.softnet.core.WritableSerializer;
+import rx.Subscriber;
 
 
 /**
  * Created by vagvaz on 10/11/15.
  */
-public class MapDBIndex<K extends WritableComparable,V extends Writable> implements KeyValueStore<K,V> {
+public class MapDBIndex<K extends WritableComparable, V extends Writable>
+    implements KeyValueStore<K, V> {
 
-    private  KVSConfiguration configuration;
-  private DB theDb;
-    private
- BTreeMap<K, Integer> keysDB;
   BTreeMap<KeyWrapper<K>, V> dataDB;
+  boolean closed = false;
+  private KVSConfiguration configuration;
+  private DB theDb;
+  private
+  BTreeMap<K, Integer> keysDB;
   private File baseDirFile;
   private File keydbFile;
   private File datadbFile;
-
   private Iterable<Map.Entry<K, Integer>> keyIterator;
   private MapDBDataIterator valuesIterator;
-  boolean closed = false;
   //  private int batchSize = ;
   private int batchCount = 0;
 
   private org.slf4j.Logger log = LoggerFactory.getLogger(MapDBIndex.class);
-    private Class<V> valueClass;
-    private Class<K> keyClass;
+  private Class<V> valueClass;
+  private Class<K> keyClass;
 
-    public MapDBIndex(KVSConfiguration configuration) {
+  public MapDBIndex(KVSConfiguration configuration) {
     this.configuration = configuration;
-        baseDirFile = new File(configuration.getBaseDir());
+    baseDirFile = new File(configuration.getBaseDir());
     if (baseDirFile.exists() && baseDirFile.isDirectory()) {
       for (File f : baseDirFile.listFiles()) {
         f.delete();
@@ -56,82 +62,58 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
       baseDirFile.delete();
     }
     baseDirFile.getParentFile().mkdirs();
-    keydbFile = new File(baseDirFile.toString() + "/" + configuration.getName()+".keydb");
-    datadbFile = new File(baseDirFile.toString() + "/" + configuration.getName()+".datadb");
+    keydbFile = new File(baseDirFile.toString() + "/" + configuration.getName() + ".keydb");
+    datadbFile = new File(baseDirFile.toString() + "/" + configuration.getName() + ".datadb");
 
-       keyClass = null;
-      try {
-          keyClass = (Class<K>)  configuration.getKeyClass();//this.getClass().getClassLoader().loadClass(configuration.getKeyClass());
-      } catch (Exception e) {
-          e.printStackTrace();
-      }
-       valueClass = null;
-      try {
-          valueClass = (Class<V>) configuration.getValueClass();//this.getClass().getClassLoader().loadClass(configuration.getValueClass());
-      } catch (Exception e) {
-          e.printStackTrace();
-      }
+    keyClass = null;
+    try {
+      keyClass =
+          (Class<K>) configuration
+              .getKeyClass();//this.getClass().getClassLoader().loadClass(configuration.getKeyClass());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    valueClass = null;
+    try {
+      valueClass =
+          (Class<V>) configuration
+              .getValueClass();//this.getClass().getClassLoader().loadClass(configuration.getValueClass());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
-      try {
-      theDb = DBMaker.newTempFileDB().compressionEnable().mmapFileEnableIfSupported().transactionDisable().closeOnJvmShutdown().deleteFilesAfterClose().asyncWriteEnable().make();
-          KeyWrapper tmpWrapper = new KeyWrapper(keyClass);
-      keysDB = theDb.createTreeMap(keydbFile.getName()).keySerializer(new WritableComparableSerializer<K>(keyClass)).makeOrGet();
-      dataDB = theDb.createTreeMap(datadbFile.getName()).nodeSize(100).keySerializer(new WritableComparableSerializer<>(tmpWrapper)).valueSerializer(new WritableSerializer<V>(valueClass)).makeOrGet();
+    try {
+      theDb =
+          DBMaker.newTempFileDB().compressionEnable().mmapFileEnableIfSupported()
+              .transactionDisable().closeOnJvmShutdown().deleteFilesAfterClose().asyncWriteEnable()
+              .make();
+      KeyWrapper tmpWrapper = new KeyWrapper(keyClass);
+      keysDB =
+          theDb.createTreeMap(keydbFile.getName())
+              .keySerializer(new WritableComparableSerializer<K>(keyClass)).makeOrGet();
+      dataDB =
+          theDb.createTreeMap(datadbFile.getName()).nodeSize(100)
+              .keySerializer(new WritableComparableSerializer<>(tmpWrapper))
+              .valueSerializer(new WritableSerializer<V>(valueClass)).makeOrGet();
 
-    }catch (Exception e){
+    } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
-  public void printKeys() {
-    Iterator iterator = keysDB.descendingMap().entrySet().iterator();
-    //    iterator.seekToFirst();
-    while (iterator.hasNext()) {
-      Map.Entry e = (Map.Entry) iterator.next();
-      System.out.println(e.getKey() + " -> " + e.getValue());
-    }
-    System.out.println("keyvalues++++++++++++++++++\n");
-    iterator = dataDB.descendingMap().entrySet().iterator();
-    while (iterator.hasNext()) {
-      Map.Entry e = (Map.Entry) iterator.next();
-      System.out.println(e.getKey());
-    }
-    System.out.println("values-------------\n");
-  }
-
-    @Override
-   public Iterable<Map.Entry<K, Integer>> getKeysIterator() {
-    keyIterator = new MapDBKeyIterator(keysDB.descendingMap().entrySet());
-    return keyIterator;
-  }
-
-   public Iterator<V> getKeyIterator(K key, Integer counter) {
-    //        if(valuesIterator != null){
-    //            valuesIterator.close();
-    //        }
-    K realKey = key;// key.substring(0,key.lastIndexOf("{}"));
-    if (valuesIterator == null)
-      valuesIterator = new MapDBDataIterator(dataDB, realKey, counter,valueClass);
-    //        }
-
-
-    valuesIterator.initialize(realKey, counter);
-    return valuesIterator;
-
-  }
-
   public static void main(String[] args) {
     for (int i = 0; i < 1; i++) {
-        KVSConfiguration configuration = new KVSConfiguration("testmapdb");
-        configuration.setLocal(true);
-        configuration.setBaseDir("/tmp/testdb");
-        configuration.setMaterialized(true);
-        configuration.setKeyClass(Text.class);
-        configuration.setValueClass(Text.class);
-      MapDBIndex<Text,Text> index = new MapDBIndex(configuration);
-        Text t = null;
-      if (t == null)
+      KVSConfiguration configuration = new KVSConfiguration("testmapdb");
+      configuration.setLocal(true);
+      configuration.setBaseDir("/tmp/testdb");
+      configuration.setMaterialized(true);
+      configuration.setKeyClass(Text.class);
+      configuration.setValueClass(Text.class);
+      MapDBIndex<Text, Text> index = new MapDBIndex(configuration);
+      Text t = null;
+      if (t == null) {
         t = initTuple();
+      }
       int numberofkeys = 500000;
       int numberofvalues = 2;
       String baseKey = "baseKeyString";
@@ -166,7 +148,7 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
         Iterator<Text> iterator = index.getKeyIterator(entry.getKey(), entry.getValue());
         while (iterator.hasNext()) {
           try {
-            Text tt =  iterator.next();
+            Text tt = iterator.next();
             //                    String t = (String)iterator.next();
             //                System.out.println(t.getAttribute("key")+" --- " + t.getAttribute("value"));
             counter++;
@@ -195,32 +177,33 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
       e.printStackTrace();
     }
   }
-    private static Text initTuple() {
-        Text t = new Text();
-        int key = 4;
-        int value = 5;
-        String f = new String();
-        for (int i = 0; i < 4; i++) {
+
+  private static Text initTuple() {
+    Text t = new Text();
+    int key = 4;
+    int value = 5;
+    String f = new String();
+    for (int i = 0; i < 4; i++) {
 //      t.setAttribute("key-" + key + "-" + i, key);
 //      t.setAttribute("value-" + value + "-" + i, value);
 //      t.setAttribute("keyvalue-" + key + "." + value + "-" + i, key * value);
-            f +=("akasjd;flkasjd;flkjas;dlfkjas;ldkfja;lskdjf;laskjdf;laskjdfl;aksjdflkjh;goheriolugtleikrgtiw2u3h4rpo243ur430" +
-                    "opurt038u4ptr80i3jmtfpojk;flkms;fdk;a'sldkfasjdf;alsdjf;alsdkjf;laskjdf;lajdlfjkal;sdkjf;laskdjfladshujro2" +
-                    "uy349o2u34ol2j34l;k2jm3;4lk2j3oi42u3o492uy3948729384ou2o34u923874928374928374928upoaisdjf;lkamfdl.amdfljkaor8u290347928736409263492734092874928374928" +
-                    "akasjd;flkasjd;flkjas;dlfkjas;ldkfja;lskdjf;laskjdf;laskjdfl;aksjdflkjh;goheriolugtleikrgtiw2u3h4rpo243ur430" +
-                    "opurt038u4ptr80i3jmtfpojk;flkms;fdk;a'sldkfasjdf;alsdjf;alsdkjf;laskjdf;lajdlfjkal;sdkjf;laskdjfladshujro2" +
-                    "uy349o2u34ol2j34l;k2jm3;4lk2j3oi42u3o492uy3948729384ou2o34u923874928374928374928upoaisdjf;lkamfdl.amdfljkaor8u290347928736409263492734092874928374928" +
-                    "sadfasdfajdkflasjdf;lakjdf;lkajsdfl;kajsdlf;kjas;ldkfjal;sdjkfla;skdjflaskdjf;lakjdflaksjdf;lkajsdflkas");
-        }
-        t.set(f);
-        return t;
+      f +=
+          ("akasjd;flkasjd;flkjas;dlfkjas;ldkfja;lskdjf;laskjdf;laskjdfl;aksjdflkjh;goheriolugtleikrgtiw2u3h4rpo243ur430"
+           +
+           "opurt038u4ptr80i3jmtfpojk;flkms;fdk;a'sldkfasjdf;alsdjf;alsdkjf;laskjdf;lajdlfjkal;sdkjf;laskdjfladshujro2"
+           +
+           "uy349o2u34ol2j34l;k2jm3;4lk2j3oi42u3o492uy3948729384ou2o34u923874928374928374928upoaisdjf;lkamfdl.amdfljkaor8u290347928736409263492734092874928374928"
+           +
+           "akasjd;flkasjd;flkjas;dlfkjas;ldkfja;lskdjf;laskjdf;laskjdfl;aksjdflkjh;goheriolugtleikrgtiw2u3h4rpo243ur430"
+           +
+           "opurt038u4ptr80i3jmtfpojk;flkms;fdk;a'sldkfasjdf;alsdjf;alsdkjf;laskjdf;lajdlfjkal;sdkjf;laskdjfladshujro2"
+           +
+           "uy349o2u34ol2j34l;k2jm3;4lk2j3oi42u3o492uy3948729384ou2o34u923874928374928374928upoaisdjf;lkamfdl.amdfljkaor8u290347928736409263492734092874928374928"
+           +
+           "sadfasdfajdkflasjdf;lakjdf;lkajsdfl;kajsdlf;kjas;ldkfjal;sdjkfla;skdjflaskdjf;lakjdflaksjdf;lkajsdflkas");
     }
-
-
-  //    80.156.73.113:11222;80.156.73.116:11222;80.156.73.123:11222;80.156.73.128:11222
-  //    ;
-  public synchronized void flush() {
-
+    t.set(f);
+    return t;
   }
 
   private static ArrayList<Text> generate(int numberofkeys, int numberofvalues) {
@@ -237,59 +220,98 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
     return result;
   }
 
+  public void printKeys() {
+    Iterator iterator = keysDB.descendingMap().entrySet().iterator();
+    //    iterator.seekToFirst();
+    while (iterator.hasNext()) {
+      Map.Entry e = (Map.Entry) iterator.next();
+      System.out.println(e.getKey() + " -> " + e.getValue());
+    }
+    System.out.println("keyvalues++++++++++++++++++\n");
+    iterator = dataDB.descendingMap().entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry e = (Map.Entry) iterator.next();
+      System.out.println(e.getKey());
+    }
+    System.out.println("values-------------\n");
+  }
 
+  @Override
+  public Iterable<Map.Entry<K, Integer>> getKeysIterator() {
+    keyIterator = new MapDBKeyIterator(keysDB.descendingMap().entrySet());
+    return keyIterator;
+  }
 
-   public void put(K key, V value) {
+  public Iterator<V> getKeyIterator(K key, Integer counter) {
+    //        if(valuesIterator != null){
+    //            valuesIterator.close();
+    //        }
+    K realKey = key;// key.substring(0,key.lastIndexOf("{}"));
+    if (valuesIterator == null) {
+      valuesIterator = new MapDBDataIterator(dataDB, realKey, counter, valueClass);
+    }
+    //        }
 
-       try {
+    valuesIterator.initialize(realKey, counter);
+    return valuesIterator;
 
+  }
 
-           Integer counter = keysDB.get((key));
+  //    80.156.73.113:11222;80.156.73.116:11222;80.156.73.123:11222;80.156.73.128:11222
+  //    ;
+  public synchronized void flush() {
 
-           if (counter == null) {
-               counter = 0;
-           } else {
-               counter += 1;
-           }
+  }
 
-           keysDB.put(key, counter);
-           KeyWrapper wrapper = new KeyWrapper(key,counter);
+  public void put(K key, V value) {
+
+    try {
+
+      Integer counter = keysDB.get((key));
+
+      if (counter == null) {
+        counter = 0;
+      } else {
+        counter += 1;
+      }
+
+      keysDB.put(key, counter);
+      KeyWrapper wrapper = new KeyWrapper(key, counter);
 //           ByteArrayDataOutput keyOutput = ByteStreams.newDataOutput();
 //           wrapper.write(keyOutput);
 
-           //        System.out.println(b.length);
-           //        dataDB.put(bytes(key+"{}"+counter),b,writeOptions);
-           dataDB.put(wrapper,value);
+      //        System.out.println(b.length);
+      //        dataDB.put(bytes(key+"{}"+counter),b,writeOptions);
+      dataDB.put(wrapper, value);
 
-       } catch (Exception e) {
-           e.printStackTrace();
-           PrintUtilities.logStackTrace(log, e.getStackTrace());
-       }
+    } catch (Exception e) {
+      e.printStackTrace();
+      PrintUtilities.logStackTrace(log, e.getStackTrace());
+    }
   }
 
   public void add(K keyObject, V valueObject) {
-    put(keyObject,valueObject);
+    put(keyObject, valueObject);
   }
-
 
   //
 
   public V get(K key) {
-      KeyWrapper wrapper = new KeyWrapper(key,0);
-      ByteArrayDataOutput keyOutput = ByteStreams.newDataOutput();
-      try {
-          wrapper.write(keyOutput);
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
+    KeyWrapper wrapper = new KeyWrapper(key, 0);
+    ByteArrayDataOutput keyOutput = ByteStreams.newDataOutput();
+    try {
+      wrapper.write(keyOutput);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
-      //        System.out.println(b.length);
-      //        dataDB.put(bytes(key+"{}"+counter),b,writeOptions);
-      return dataDB.get(keyOutput.toByteArray());
+    //        System.out.println(b.length);
+    //        dataDB.put(bytes(key+"{}"+counter),b,writeOptions);
+    return dataDB.get(keyOutput.toByteArray());
 
   }
 
-    @Override
+  @Override
   public int size() {
 //      int sum = 0;
 //      for(Integer  i : keysDB.values()){
@@ -298,24 +320,25 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
     return keysDB.size();
   }
 
-    public Iterable<Map.Entry<K, Integer>> keysIterator() {
-        return keysIterator();
-    }
+  public Iterable<Map.Entry<K, Integer>> keysIterator() {
+    return keysIterator();
+  }
 
-    public Iterator<V> valuesIterator(K key) {
-        return null;
-    }
+  public Iterator<V> valuesIterator(K key) {
+    return null;
+  }
 
-    public Iterable<Map.Entry<K, V>> iterator() {
-        return null;
-    }
+  public Iterable<Map.Entry<K, V>> iterator() {
+    return null;
+  }
 
 
-    public boolean contains(K key) {
+  public boolean contains(K key) {
     return keysDB.containsKey(key);
   }
-    public synchronized void close() {
-    if(this.closed){
+
+  public synchronized void close() {
+    if (this.closed) {
       return;
     }
     closed = true;
@@ -357,17 +380,18 @@ public class MapDBIndex<K extends WritableComparable,V extends Writable> impleme
     //        JniDBFactory.popMemoryPool();
   }
 
-    public String getName() {
-        return configuration.getName();
-    }
+  public String getName() {
+    return configuration.getName();
+  }
 
 
-  @Override public void finalize() {
+  @Override
+  public void finalize() {
     System.err.println("Finalize leveldb Index " + this.baseDirFile.toString());
   }
 
-    @Override
-    public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
-        rx.Observable.create(this).subscribe(subscriber);
-    }
+  @Override
+  public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
+    rx.Observable.create(this).subscribe(subscriber);
+  }
 }

@@ -3,6 +3,8 @@ package kvstests;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.IntWritable;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -20,6 +22,7 @@ public class PipelineSingleTest extends TestCase {
   protected KVSConfiguration configuration;
 
   @Override
+  @Before
   protected void setUp() throws Exception {
     super.setUp();
     configuration = new KVSConfiguration();
@@ -28,11 +31,13 @@ public class PipelineSingleTest extends TestCase {
     kvs = new PipelineSingleKVS<>(configuration);
   }
 
+  @Test
   public void testGetName() {
     System.out.println("Testing getName");
     assertEquals("testName", kvs.getName());
   }
 
+  @Test
   public void testIterator() {
     System.out.println("Testing iterator");
     for (int i = 0; i < configuration.getBatchSize(); i++) {
@@ -54,6 +59,30 @@ public class PipelineSingleTest extends TestCase {
     }
 
     kvs.close();
+  }
+
+  @Test
+  public void testPuts() {
+    System.out.println("Testing puts");
+    Observable observable = Observable.create(kvs);
+    observable.subscribe(new TestSubscriber());
+
+    for (int i = 0; i < configuration.getBatchSize(); i++) {
+      kvs.put(new IntWritable(i), new IntWritable(i));
+    }
+    kvs.close();
+  }
+
+  @Test
+  public void testGets() {
+    System.out.println("Testing gets");
+    for (int i = 0; i < configuration.getBatchSize() - 1; i++) {  // don't let the kvs flush
+      kvs.put(new IntWritable(i), new IntWritable(i));
+    }
+
+    for (int i = 0; i < configuration.getBatchSize() - 1; i++) {
+      assertEquals(i, kvs.get(new IntWritable(i)).get());
+    }
   }
 
   private class TestSubscriber extends Subscriber<Map.Entry<IntWritable, IntWritable>> {
@@ -85,28 +114,6 @@ public class PipelineSingleTest extends TestCase {
       assertEquals(lastValue, intWritableIntWritableEntry.getValue());
       lastKey.set(lastKey.get() + 1);
       lastValue.set(lastValue.get() + 1);
-    }
-  }
-
-  public void testPuts() {
-    System.out.println("Testing puts");
-    Observable observable = Observable.create(kvs);
-    observable.subscribe(new TestSubscriber());
-
-    for (int i = 0; i < configuration.getBatchSize(); i++) {
-      kvs.put(new IntWritable(i), new IntWritable(i));
-    }
-    kvs.close();
-  }
-
-  public void testGets() {
-    System.out.println("Testing gets");
-    for (int i = 0; i < configuration.getBatchSize() - 1; i++) {  // don't let the kvs flush
-      kvs.put(new IntWritable(i), new IntWritable(i));
-    }
-
-    for (int i = 0; i < configuration.getBatchSize() - 1; i++) {
-      assertEquals(i, kvs.get(new IntWritable(i)).get());
     }
   }
 }
