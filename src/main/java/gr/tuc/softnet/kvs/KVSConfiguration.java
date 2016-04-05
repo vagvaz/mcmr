@@ -10,7 +10,15 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 public class KVSConfiguration extends HierarchicalConfiguration {
     String defaultBaseDir = System.getProperty("java.io.tmpdir")+"/mcmcr/kvs/";
     boolean defaultIsLocal = false;
+    int batchSize;
 
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
 
     public KVSConfiguration(){
         super();

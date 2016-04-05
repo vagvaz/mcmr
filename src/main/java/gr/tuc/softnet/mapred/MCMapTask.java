@@ -69,8 +69,6 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
         ob.subscribe(subscriber);
     }
 
-
-
     @Override
     public boolean start() {
         return false;
