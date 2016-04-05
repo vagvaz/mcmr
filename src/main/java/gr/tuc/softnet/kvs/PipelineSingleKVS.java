@@ -31,16 +31,8 @@ public class PipelineSingleKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public void flush() {
-    Map<K, V> oldKvs;
-    synchronized (kvs) {
-      oldKvs = kvs;
-      kvs = new HashMap<>();
-    }
-    for (Map.Entry<K, V> e : oldKvs.entrySet()) {
-      for (Subscriber<? super Map.Entry<K, V>> s : subscribers) {
-        s.onNext(e);
-      }
-    }
+    doFlush();
+    close();
   }
 
   @Override
@@ -100,5 +92,18 @@ public class PipelineSingleKVS<K extends WritableComparable, V extends Writable>
   @Override
   public void call(Subscriber<? super Map.Entry<K, V>> subscriber) {
     subscribers.add(subscriber);
+  }
+
+  private void doFlush() {
+    Map<K, V> oldKvs;
+    synchronized (kvs) {
+      oldKvs = kvs;
+      kvs = new HashMap<>();
+    }
+    for (Map.Entry<K, V> e : oldKvs.entrySet()) {
+      for (Subscriber<? super Map.Entry<K, V>> s : subscribers) {
+        s.onNext(e);
+      }
+    }
   }
 }

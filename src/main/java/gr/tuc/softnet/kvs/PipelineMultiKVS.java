@@ -23,13 +23,11 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
   private Map<K, List<V>> kvs;
   private List<Subscriber<? super Map.Entry<K, Iterator<V>>>> subscribers;
   private KVSConfiguration configuration;
-  private int puts;
   private AtomicInteger size;
 
   public PipelineMultiKVS(KVSConfiguration configuration) {
     this.configuration = configuration;
     this.kvs = new HashMap<>();
-    this.puts = 0;
     this.size = new AtomicInteger(0);
     this.subscribers = new ArrayList<>();
   }
@@ -42,27 +40,16 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
       kvs.put(key, list);
     }
     list.add(value);
-    size.incrementAndGet();
 
-    if (puts++ >= configuration.getBatchSize()) {
+    if (size.getAndIncrement() >= configuration.getBatchSize()) {
       flush();
     }
   }
 
   @Override
   public void flush() {
-    Map<K, List<V>> oldKvs;
-    synchronized (kvs) {
-      oldKvs = kvs;
-      kvs = new HashMap<>();
-    }
-
-    for (Map.Entry<K, List<V>> e : oldKvs.entrySet()) {
-      size.addAndGet(-1 * e.getValue().size());  // subtract the flushed items
-      for (Subscriber<? super Map.Entry<K, Iterator<V>>> s : subscribers) {
-        s.onNext(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue().iterator()));
-      }
-    }
+    doFlush();
+    close();
   }
 
   @Override
@@ -76,7 +63,7 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
   }
 
   @Override
-  public int size() {  // TODO(ap0n): Should return the size of the map or the size of the Values?
+  public int size() {
     return size.get();
   }
 
@@ -119,5 +106,20 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
   @Override
   public void call(Subscriber<? super Map.Entry<K, Iterator<V>>> subscriber) {
     subscribers.add(subscriber);
+  }
+
+  private void doFlush() {
+    Map<K, List<V>> oldKvs;
+    synchronized (kvs) {
+      oldKvs = kvs;
+      kvs = new HashMap<>();
+    }
+    size.set(0);
+
+    for (Map.Entry<K, List<V>> e : oldKvs.entrySet()) {
+      for (Subscriber<? super Map.Entry<K, Iterator<V>>> s : subscribers) {
+        s.onNext(new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue().iterator()));
+      }
+    }
   }
 }
