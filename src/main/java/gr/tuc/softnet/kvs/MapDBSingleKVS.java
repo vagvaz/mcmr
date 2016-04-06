@@ -11,6 +11,8 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
 
+import gr.tuc.softnet.core.WritableComparableSerializer;
+import gr.tuc.softnet.core.WritableSerializer;
 import rx.Observable;
 import rx.Subscriber;
 
@@ -24,6 +26,8 @@ public class MapDBSingleKVS<K extends WritableComparable, V extends Writable>
   private DB db;
   private BTreeMap<K, V> dataDb;
   private boolean iteratorReturned;
+  private Class<V> valueClass;
+  private Class<K> keyClass;
 
   public MapDBSingleKVS(KVSConfiguration configuration) {
     this.configuration = configuration;
@@ -45,9 +49,25 @@ public class MapDBSingleKVS<K extends WritableComparable, V extends Writable>
     } else if (baseDirFile.exists()) {
       baseDirFile.delete();
     }
+
+    keyClass = null;
+    try {
+      keyClass = (Class<K>) configuration.getKeyClass();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    valueClass = null;
+    try {
+      valueClass = (Class<V>) configuration.getValueClass();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
     baseDirFile.getParentFile().mkdirs();
     dataDb = db.createTreeMap(baseDirFile.toString() + "/" + configuration.getName() + ".datadb")
         .nodeSize(100)
+        .keySerializer(new WritableComparableSerializer<K>(keyClass))
+        .valueSerializer(new WritableSerializer<V>(valueClass))
         .makeOrGet();
   }
 

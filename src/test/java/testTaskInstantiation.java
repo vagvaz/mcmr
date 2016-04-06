@@ -14,7 +14,7 @@ import org.apache.hadoop.io.Text;
  * Created by vagvaz on 03/04/16.
  */
 public class testTaskInstantiation {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Injector injector = Guice.createInjector(new MCNodeModule());
         InjectorUtils.setInjector(injector);
         NodeManager nodemanager = injector.getInstance(NodeManager.class);
