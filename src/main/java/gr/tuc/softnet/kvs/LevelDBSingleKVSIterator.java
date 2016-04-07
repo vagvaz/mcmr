@@ -79,11 +79,6 @@ public class LevelDBSingleKVSIterator<K extends WritableComparable, V extends Wr
     return new AbstractMap.SimpleEntry<>(currentKey, currentValue);
   }
 
-  @Override
-  public void remove() {
-    throw new NotImplementedException();
-  }
-
   public void close() {
     try {
       iterator.close();
