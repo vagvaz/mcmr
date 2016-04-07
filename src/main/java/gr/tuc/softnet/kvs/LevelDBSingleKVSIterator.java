@@ -26,13 +26,13 @@ import java.util.function.Consumer;
 public class LevelDBSingleKVSIterator<K extends WritableComparable, V extends Writable>
     implements Iterable<Map.Entry<K, V>>,
                Iterator<Map.Entry<K, V>> {
-  DB db;
-  DBIterator iterator;
-  ReadOptions readOptions;
-  Class<K> keyClass;
-  Class<V> valueClass;
-  K currentKey;
-  V currentValue;
+  private DB db;
+  private DBIterator iterator;
+  private ReadOptions readOptions;
+  private Class<K> keyClass;
+  private Class<V> valueClass;
+  private K currentKey;
+  private V currentValue;
 
   public LevelDBSingleKVSIterator(DB db, Class<K> keyClass, Class<V> valueClass) {
     this.db = db;
