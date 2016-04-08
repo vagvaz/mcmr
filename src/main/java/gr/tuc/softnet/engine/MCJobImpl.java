@@ -412,7 +412,7 @@ public class MCJobImpl implements MCJob {
       runningLocalReduceTasks.get(microcloud).remove(id);
       if(jobConf.isFederationReducePipeline()){
         if(runningLocalReduceTasks.get(microcloud).size() == 0){
-          result.putAll(getNoMoreInputFederationreduce(microcloud));
+          result.putAll(getNoMoreInputFederationReduce(microcloud));
         }
       }
     }else{
