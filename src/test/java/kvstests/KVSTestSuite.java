@@ -9,6 +9,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     PipelineSingleTest.class,
-    PipelineMultiTest.class
+    PipelineMultiTest.class,
+    KVSSingeTest.class
 })
 public class KVSTestSuite { }
