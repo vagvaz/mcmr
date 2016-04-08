@@ -43,6 +43,7 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
   private DBFactory dbfactory;
   private int batchSize;
   private int batchCount;
+  private Class<K> keyClass;
   private Class<V> valueClass;
   private Configuration hadoopConf;
   private AtomicInteger size;
@@ -52,7 +53,8 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
     batchSize = 50000;
     batchCount = 0;
     hadoopConf = new Configuration();
-    size.set(0);
+    size = new AtomicInteger(0);
+    iteratorReturned = false;
 
     File baseDirFile = new File(configuration.getBaseDir());
     if (baseDirFile.exists() && baseDirFile.isDirectory()) {
@@ -90,7 +92,14 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
 
     valueClass = null;
     try {
-      valueClass = (Class<V>)configuration.getValueClass();// this.getClass().getClassLoader().loadClass(configuration.getValueClass());
+      valueClass = (Class<V>)configuration.getValueClass();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    keyClass = null;
+    try {
+      keyClass = (Class<K>)configuration.getKeyClass();
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -108,7 +117,11 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
   }
 
   @Override
-  public void put(K key, V value) {
+  public void put(K key, V value) throws Exception {
+    if (iteratorReturned) {
+      throw new Exception("Trying to write after has returned iterator");
+    }
+
     ByteArrayDataOutput keyBytes = ByteStreams.newDataOutput();
     ByteArrayDataOutput valueBytes = ByteStreams.newDataOutput();
     try {
@@ -174,7 +187,8 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public Iterable<Map.Entry<K, V>> iterator() {
-    return null;
+    iteratorReturned = true;
+    return new LevelDBSingleKVSIterator<>(dataDB, keyClass, valueClass);
   }
 
   @Override
