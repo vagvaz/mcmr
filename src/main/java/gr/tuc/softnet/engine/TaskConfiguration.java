@@ -45,7 +45,7 @@ public class TaskConfiguration extends HierarchicalConfiguration {
         return getString(ConfStringConstants.TASK_TYPE,StringConstants.BATCH_TASK).equals(StringConstants.BATCH_TASK);
     }
 
-    public Class getKeyClass() {
+    public Class<? extends WritableComparable> getKeyClass() {
         return (Class) getProperty(ConfStringConstants.KEY_CLASS);
     }
 
@@ -53,11 +53,11 @@ public class TaskConfiguration extends HierarchicalConfiguration {
         setProperty(ConfStringConstants.KEY_CLASS, keyClass);
     }
 
-    public Class getValueClass() {
+    public Class<? extends Writable> getValueClass() {
         return (Class) getProperty(ConfStringConstants.VALUE_CLASS);
     }
 
-    public void setValueClass(Class valueClass) {
+    public void setValueClass(Class<? extends Writable> valueClass) {
         setProperty(ConfStringConstants.VALUE_CLASS, valueClass);
     }
 
@@ -80,21 +80,25 @@ public class TaskConfiguration extends HierarchicalConfiguration {
     public Class<? extends Reducer<?, ?, ?, ?>> getFederationReducerClass() {
         return (Class<? extends Reducer<?, ?, ?, ?>>) getProperty(ConfStringConstants.FEDERATION_REDUCER_CLASS);
     }
+    public void setFederationReducerClass(Class<? extends Reducer<?,?,?,?>> federationReducerClass){
+        setProperty(ConfStringConstants.FEDERATION_REDUCER_CLASS,federationReducerClass);
+    }
 
     public Class<? extends Reducer<?, ?, ?, ?>> getLocalReducerClass() {
         return (Class<? extends Reducer<?, ?, ?, ?>>) getProperty(ConfStringConstants.LOCAL_REDUCER_CLASS);
     }
 
-    public Class<? extends Mapper<?, ?, ?, ?>> getMapClass() {
+    public void setLocalReducerClass(Class<? extends Reducer<?,?,?,?>> reducerClass){
+        setProperty(ConfStringConstants.FEDERATION_REDUCER_CLASS,reducerClass);
+    }
+
+
+    public Class<? extends Mapper<?, ?, ?, ?>> getMapperClass() {
         return (Class) getProperty(ConfStringConstants.MAP_CLASS);
     }
 
-    public String getJar() {
-        return getString(ConfStringConstants.JAR_NAME);
-    }
-
-    public void setJar(String jar) {
-        setProperty(ConfStringConstants.JAR_NAME, jar);
+    public void setMapperClass(Class<? extends MCMapper> mapperClass) {
+        setProperty(ConfStringConstants.MAP_CLASS, mapperClass);
     }
 
     public Class<? extends Partitioner<?, ?>> getPartitionerClass() {
@@ -111,6 +115,14 @@ public class TaskConfiguration extends HierarchicalConfiguration {
 
     public void setCombinerClass(Class<? extends Reducer<?, ?, ?, ?>> combinerClass) {
         setProperty(ConfStringConstants.COMBINER_CLASS, combinerClass);
+    }
+
+    public String getJar() {
+        return getString(ConfStringConstants.JAR_NAME);
+    }
+
+    public void setJar(String jar) {
+        setProperty(ConfStringConstants.JAR_NAME, jar);
     }
 
     public Class<? extends WritableComparable> getOutKeyClass() {
@@ -165,11 +177,26 @@ public class TaskConfiguration extends HierarchicalConfiguration {
         setProperty(ConfStringConstants.MAP_OUTPUT_VALUE_CLASS,classValue);
     }
 
-    public void setMapperClass(Class<? extends MCMapper> mapperClass) {
-        setProperty(ConfStringConstants.MAP_CLASS, mapperClass);
+    public void setTargetNode(String id) {
+        setProperty(ConfStringConstants.NODE_ID,id);
     }
-    public Class<? extends MCMapper> getMapperClass()
-    {
-        return (Class<? extends MCMapper>) getProperty(ConfStringConstants.MAP_CLASS);
+    public String getNodeTargetNode(){
+        return getString(ConfStringConstants.NODE_ID);
+    }
+
+    public void setIsBatch(boolean isbatch) {
+        if(isbatch) {
+            setProperty(ConfStringConstants.TASK_TYPE,StringConstants.BATCH_TASK);
+        }else{
+            setProperty(ConfStringConstants.TASK_TYPE,StringConstants.PIPELINE_TASK);
+        }
+    }
+
+    public void setTargetCloud(String cloud) {
+        setProperty(ConfStringConstants.MICRO_CLOUD, cloud);
+    }
+
+    public String getTargetCloud(){
+        return getString(ConfStringConstants.MICRO_CLOUD);
     }
 }

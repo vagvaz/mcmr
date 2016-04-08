@@ -11,7 +11,6 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
  */
 public class NodeStatus implements Statusable {
     String nodeID;
-    NodeInfo nodeInfo;
     HierarchicalConfiguration configuration;
     public NodeStatus(String name, Configuration configuration){
         this.nodeID = name;
@@ -29,5 +28,13 @@ public class NodeStatus implements Statusable {
 
     public Configuration getStatus() {
         return configuration;
+    }
+
+    public String getMicrocloud(){
+        return configuration.getString(ConfStringConstants.MICRO_CLOUD);
+    }
+
+    public void setMicrocloud(String microcloud){
+        configuration.setProperty(ConfStringConstants.MICRO_CLOUD,microcloud);
     }
 }

@@ -24,4 +24,6 @@ public interface NodeManager extends IDable,MCNode   {
     void reset();
 
     List<NodeStatus> getNodeStatus(List<String> microclouds);
+
+    String getNodeID();
 }

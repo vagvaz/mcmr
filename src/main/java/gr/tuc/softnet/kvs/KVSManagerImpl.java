@@ -55,7 +55,15 @@ public class KVSManagerImpl implements KVSManager {
 
     private <K extends WritableComparable, V extends Writable> void bootstrapKVS(KVSConfiguration kvsConfiguration) {
         KeyValueStore<K,V> newKVS = factory.createNewInstance(kvsConfiguration);
-        KVSProxy<K,V> kvsProxy = new KVSProxy<K, V>(newKVS.getName());
+        MCPartitioner partitioner = null;
+//        if(kvsConfiguration.getPartioner() == null){
+            partitioner = new DefaultHashPartitioner();
+//        }
+//        else{
+//            partitioner = PartitionerFactory.getParti
+//        }
+        KVSProxy kvsProxy = InjectorUtils.getInjector().getInstance(KVSProxy.class);
+        kvsProxy.initialize(kvsConfiguration.getName(),partitioner);
         KVSWrapper<K,V> wrapper = new KVSWrapper<K, V>(newKVS,kvsProxy);
         kvsWrapperMap.put(kvsConfiguration.getName(),wrapper);
     }

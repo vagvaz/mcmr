@@ -29,6 +29,15 @@ public class ConfStringConstants {
     public static final String OUT_VALUE_CLASS = "outValueClass";
     public static final String MAP_OUTPUT_KEY_CLASS = "mapOutputKeyClass"   ;
     public static final String MAP_OUTPUT_VALUE_CLASS = "mapOutputValueClass"   ;
+    public static final String FEDERATION_REDUCE_OUTPUT_VALUE_CLASS =
+        "federationReduceOutputValueClass";
+    public static final String FEDERATION_REDUCE_OUTPUT_KEY_CLASS = "federationReduceOutputKeyClass";
+    public static final String LOCAL_REDUCE_OUTPUT_VALUE_CLASS = "localReduceOutputValueClass";
+    public static final String LOCAL_REDUCE_OUTPUT_KEY_CLASS = "localReduceOutputKeyClass";
+    public static final java.lang.String IS_MAP_PIPELINE = "isMapPipeline";
+    public static final java.lang.String IS_LOCAL_REDUCE_PIPELINE = "isLocalReducePipeline";
+    public static final java.lang.String IS_FEDERATION_REDUCE_PIPELINE = "isFederationReducePipeline";
+    public static final java.lang.String MICRO_CLOUD = "microCloud";
     public static String MAP_CLASS = "taskMapClass";
     public static String FEDERATION_REDUCER_CLASS = "taskFederationReducerClass";
     public static String LOCAL_REDUCER_CLASS = "taskLocalReducerClass";

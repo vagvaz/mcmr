@@ -6,10 +6,16 @@ import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.core.NodeStatus;
+import gr.tuc.softnet.kvs.KVSConfiguration;
+import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.netty.MCDataTransport;
+import gr.tuc.softnet.netty.messages.NoMoreInputMessage;
 import org.apache.commons.collections.map.HashedMap;
 import org.slf4j.Logger;
+import rx.Observable;
+import rx.Subscriber;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +23,7 @@ import java.util.Map;
  * Created by vagvaz on 03/03/16.
  */
 @Singleton
-public class JobManagerImpl implements JobManager {
+public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String> {
     @Inject
     MCDataTransport dataTransport;
     @Inject
@@ -26,8 +32,12 @@ public class JobManagerImpl implements JobManager {
     MCConfiguration configuration;
     @Inject
     NodeManager nodeManager;
+    @Inject
+    KVSManager kvsManager;
     Map<String,MCJob> jobInfo;
     Logger logger = org.slf4j.LoggerFactory.getLogger(JobManager.class);
+    private List<Subscriber<? super String>> subscribers;
+
     @Override
     public boolean startJob(List<NodeStatus> nodes, JobConfiguration jobConfiguration) {
         MCJob job = JobUtils.getJob(jobConfiguration);
@@ -43,15 +53,30 @@ public class JobManagerImpl implements JobManager {
     }
 
     private boolean boostrapJob(MCJob job) {
-        List<TaskConfiguration> taskConfigurations = job.getTaskConfigurations();
+        KVSConfiguration kvsConfiguration = job.getMapOuputConfiguration();
+        kvsManager.createKVS(kvsConfiguration.getName(),kvsConfiguration);
+        if(job.getJobConfiguration().hasLocalReduce()){
+            kvsConfiguration = job.getLocalReduceOutputConfiguration();
+            kvsManager.createKVS(kvsConfiguration.getName(),kvsConfiguration);
+        }
+        kvsConfiguration =  job.getFederationReduceOutput();
+        kvsManager.createKVS(kvsConfiguration.getName(),kvsConfiguration);
+
+       runReadyTasks(job);
+        return true;
+    }
+
+    private void runReadyTasks(MCJob job) {
+        List<TaskConfiguration> taskConfigurations = job.getReadyToRunTaskConfigurations();
+
         for(TaskConfiguration task : taskConfigurations){
 
             if(task.getNodeID().equals(configuration.getURI())){
                 taskManager.startTask(task);
+            }else {
+                dataTransport.startTask(task);
             }
-            dataTransport.startTask(task);
         }
-        return true;
     }
 
     @Override
@@ -111,8 +136,24 @@ public class JobManagerImpl implements JobManager {
     }
 
     @Override
-    public void taskCompleted(String jobID, String id) {
+    public void taskCompleted(String jobID, String cloud, String id) {
+        MCJob job = this.jobInfo.get(jobID);
+        if(job == null){
+            logger.error("Unknown job " + jobID + " task completed received");
+            return;
+        }
+        Map<String,NoMoreInputMessage> noMoreInputMessageMap = job.completeTask(cloud,id);
+        for(Map.Entry<String,NoMoreInputMessage> entry : noMoreInputMessageMap.entrySet() ){
+            dataTransport.send(entry.getKey(),entry.getValue());
+        }
 
+        runReadyTasks(job);
+        if(job.isCompleted()){
+            for(Subscriber subscriber : subscribers){
+                subscriber.onNext(job);
+                subscriber.onCompleted();
+            }
+        }
     }
 
     @Override
@@ -128,5 +169,10 @@ public class JobManagerImpl implements JobManager {
     @Override
     public void initialize() {
         jobInfo = new HashedMap();
+        subscribers = new ArrayList<>();
+    }
+
+    @Override public void call(Subscriber<? super String> subscriber) {
+        subscribers.add(subscriber);
     }
 }

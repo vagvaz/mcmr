@@ -16,7 +16,6 @@ import java.util.SortedMap;
  */
 public class KVSProxy<K,V> implements KeyValueStore<K,V> {
     String name;
-    @Inject
     MCPartitioner partitioner;
     NodeManager nodeManager;
     List<String> nodeNames;
@@ -26,9 +25,14 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
     KVSManager kvsManager;
     SortedMap<Integer,MCDataBuffer> dataBuffers;
 
-    public KVSProxy(String name) {
+    public KVSProxy() {
+
+    }
+
+    public void initialize(String name , MCPartitioner partitioner){
         this.name = name;
         dataBuffers = new FastTreeMap();
+        this.partitioner = partitioner;
     }
 
     public void put(K key, V value) {

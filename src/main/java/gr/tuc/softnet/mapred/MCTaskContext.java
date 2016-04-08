@@ -147,7 +147,7 @@ public class MCTaskContext<KEYIN extends WritableComparable, VALUEIN extends Wri
 
     @Override
     public Class<? extends Mapper<?, ?, ?, ?>> getMapperClass() throws ClassNotFoundException {
-        return configuration.getMapClass();
+        return configuration.getMapperClass();
     }
 
     @Override

@@ -1,10 +1,7 @@
 package gr.tuc.softnet.core;
 
 import com.google.inject.AbstractModule;
-import gr.tuc.softnet.engine.JobManager;
-import gr.tuc.softnet.engine.JobManagerImpl;
-import gr.tuc.softnet.engine.TaskManager;
-import gr.tuc.softnet.engine.TaskManagerImpl;
+import gr.tuc.softnet.engine.*;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KVSManagerImpl;
 import gr.tuc.softnet.netty.MCDataTransport;
@@ -23,6 +20,7 @@ public class MCNodeModule extends AbstractModule {
         bind(KVSManager.class).to(KVSManagerImpl.class);
         bind(JobManager.class).to(JobManagerImpl.class);
         bind(TaskManager.class).to(TaskManagerImpl.class);
+        bind(MCJob.class).to(MCJobImpl.class);
     }
 
 

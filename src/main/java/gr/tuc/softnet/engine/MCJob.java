@@ -1,6 +1,9 @@
 package gr.tuc.softnet.engine;
 
 import gr.tuc.softnet.core.NodeStatus;
+import gr.tuc.softnet.kvs.KVSConfiguration;
+import gr.tuc.softnet.netty.messages.NoMoreInputMessage;
+import org.apache.hadoop.mapred.JobConf;
 
 import java.util.List;
 import java.util.Map;
@@ -10,8 +13,8 @@ import java.util.Map;
  */
 public interface MCJob extends IDable {
     void setNodes(List<NodeStatus> nodes);
-
-    List<TaskConfiguration> getTaskConfigurations();
+    void initialize(JobConfiguration jobConf, Map<String,NodeStatus> clouds);
+//    List<TaskConfiguration> getTaskConfigurations();
 
     List<? extends NodeStatus> getNodes();
 
@@ -22,4 +25,18 @@ public interface MCJob extends IDable {
     JobStatus getStatus();
 
     void waitForCompletion();
+
+    KVSConfiguration getMapOuputConfiguration();
+
+    JobConfiguration getJobConfiguration();
+
+    KVSConfiguration getLocalReduceOutputConfiguration();
+
+    KVSConfiguration getFederationReduceOutput();
+
+    List<TaskConfiguration> getReadyToRunTaskConfigurations();
+
+    Map<String,NoMoreInputMessage> completeTask(String microcloud, String id);
+
+    boolean isCompleted();
 }

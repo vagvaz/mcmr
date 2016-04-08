@@ -9,6 +9,7 @@ import gr.tuc.softnet.engine.*;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KVSProxy;
 import gr.tuc.softnet.kvs.KeyValueStore;
+import gr.tuc.softnet.netty.messages.MCMessage;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -199,6 +200,10 @@ public class NettyDataTransport implements MCDataTransport {
 
       f.channel().write(nettyMessage, f.channel().voidPromise());
     }
+  }
+
+  @Override public void send(String target, MCMessage message) {
+
   }
 
   private  void updateHistogram(String target, byte[] bytes) {

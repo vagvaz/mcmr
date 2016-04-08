@@ -1,13 +1,9 @@
 package gr.tuc.softnet.mapred;
 
-import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
-import gr.tuc.softnet.engine.TaskStatus;
-import org.apache.hadoop.mapreduce.MapContext;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
@@ -63,7 +59,7 @@ public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl im
 
     public void initialize(TaskConfiguration configuration){
         super.initialize(configuration);
-        mapperClass = configuration.getMapClass();
+        mapperClass = configuration.getMapperClass();
         mapper = initializeMapper(mapperClass,keyClass,valueClass,outKeyClass,outValueClass);
         Observable ob = Observable.create(inputStore);
         ob.subscribe(subscriber);

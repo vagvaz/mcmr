@@ -5,6 +5,7 @@ import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.engine.JobManager;
 import gr.tuc.softnet.engine.TaskManager;
 import gr.tuc.softnet.kvs.KVSManager;
+import gr.tuc.softnet.netty.messages.MCMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 
@@ -23,6 +24,8 @@ public interface MCDataTransport extends KVSManager, TaskManager, NodeManager, J
     void send(String name, String indexName, Object key, Object value);
 
     void send(String target, String cacheName, byte[] bytes);
+
+    void send(String target, MCMessage message);
 
     MCConfiguration getGlobalConfig();
 
