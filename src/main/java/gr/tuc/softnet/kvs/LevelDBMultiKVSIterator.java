@@ -1,9 +1,11 @@
 package gr.tuc.softnet.kvs;
 
 import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -11,6 +13,7 @@ import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,12 +42,43 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
     this.keyClass = keyClass;
     this.valueClass = valueClass;
     keysIterator = keysDB.iterator();
+    keysIterator.seekToFirst();
     dataIterator = dataDB.iterator();
+    dataIterator.seekToFirst();
     currentEntry = null;
   }
 
   @Override
   public Iterator<Map.Entry<K, Iterator<V>>> iterator() {
+
+    System.out.println("Keys:");
+    while (keysIterator.hasNext()) {
+      Map.Entry<byte[], byte[]> keysEntry = keysIterator.next();
+      K key = ReflectionUtils.newInstance(keyClass, new Configuration());
+      ByteArrayDataInput input = ByteStreams.newDataInput(keysEntry.getKey());
+      try {
+        key.readFields(input);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      System.out.println("key = " + key.toString());
+      System.out.println("count = " + new BigInteger(keysEntry.getValue()));
+    }
+
+    System.out.println("Values: ");
+    while (dataIterator.hasNext()) {
+      Map.Entry<byte[], byte[]> dataEntry = dataIterator.next();
+      System.out.println(new BigInteger(dataEntry.getValue()));
+      V value = ReflectionUtils.newInstance(valueClass, new Configuration());
+      ByteArrayDataInput input = ByteStreams.newDataInput(dataEntry.getValue());
+      try {
+        value.readFields(input);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      System.out.println("value = " + value.toString());
+    }
+
     return this;
   }
 

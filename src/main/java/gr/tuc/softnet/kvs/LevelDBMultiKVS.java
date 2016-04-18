@@ -114,7 +114,7 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
         counter = Integer.parseInt(new String(count));
         counter += 1;
       }
-      KeyWrapper<K> wrapper = new KeyWrapper<K>(key, counter);
+      KeyWrapper<K> wrapper = new KeyWrapper<>(key, counter);
       wrapper.write(keyWrapper);
       byte[] keyvalue = bytes(counter.toString());
       keysDB.put(keyBytes.toByteArray(), keyvalue, writeOptions);
@@ -178,23 +178,20 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public Iterable<Map.Entry<K, Iterator<V>>> iterator() {
-    return null;
+    flush();
+    return new LevelDBMultiKVSIterator<>(dataDB, keysDB, keyClass, valueClass);
   }
 
   @Override
   public boolean contains(K key) {
-    KeyWrapper<K> wrapper = new KeyWrapper<>(key, 0);
-    ByteArrayDataOutput output = ByteStreams.newDataOutput();
+    ByteArrayDataOutput keyBytes = ByteStreams.newDataOutput();
     try {
-      wrapper.write(output);
+      key.write(keyBytes);
     } catch (IOException e) {
       e.printStackTrace();
     }
-    byte[] values = keysDB.get(output.toByteArray());
-    if (values == null) {
-      return false;
-    }
-    return true;
+    byte[] count = keysDB.get(keyBytes.toByteArray());
+    return count != null;
   }
 
   @Override

@@ -33,8 +33,10 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
   private Class<V> valueClass;
   private Class<K> keyClass;
   private int size;
+  private boolean closed;
 
   public MapDBMultiKVS(KVSConfiguration configuration) {
+    closed = false;
     this.configuration = configuration;
     size = 0;
     baseDirFile = new File(configuration.getBaseDir());
@@ -139,8 +141,14 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public void close() {
-    dataDB.close();
-    keysDB.close();
+    if (closed) {
+      return;
+    }
+
+    closed = true;
+
+//    dataDB.close();  // TODO(ap0n): Check out if these must be closed as well
+//    keysDB.close();
     theDb.close();
     if (baseDirFile.exists()) {
       baseDirFile.delete();
