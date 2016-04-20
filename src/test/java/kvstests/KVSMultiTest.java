@@ -57,53 +57,61 @@ public class KVSMultiTest extends TestCase {
 //    leveldbKVS.close();
   }
 
-//  @Test
-//  public void testGetName() {
-//    System.out.println("KVSSingeTest.testGetName");
-//    assertEquals(mapKVSName, mapdbKVS.getName());
+  @Test
+  public void testGetName() {
+    System.out.println("KVSSingeTest.testGetName");
+    assertEquals(mapKVSName, mapdbKVS.getName());
 //    assertEquals(levelKVSName, leveldbKVS.getName());
-//  }
+  }
 
-//  @Test
-//  public void testSize() {
-//    System.out.println("KVSMultiTest.testSize");
-//    Map<IntWritable, List<IntWritable>> data = new HashMap<>();
-//    int keysCount = 10;
-//    int valueCountPerKey = 10;
-//    generateValues(keysCount, valueCountPerKey);
-//
-//    try {
-//      appendToBothKVSs(data);
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//      fail();
-//    }
-//
-//    assertEquals(keysCount * valueCountPerKey, mapdbKVS.size());
+  @Test
+  public void testSize() {
+    System.out.println("KVSMultiTest.testSize");
+    Map<IntWritable, List<IntWritable>> data = new HashMap<>();
+    int keysCount = 10;
+    int valueCountPerKey = 10;
+    try {
+      appendToBothKVSs(generateValues(keysCount, valueCountPerKey));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    try {
+      appendToBothKVSs(data);
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail();
+    }
+
+    assertEquals(keysCount * valueCountPerKey, mapdbKVS.size());
 //    assertEquals(keysCount * valueCountPerKey, leveldbKVS.size());
-//  }
-//
-//  @Test
-//  public void testContains() {
-//    System.out.println("KVSMultiTest.testContains");
-//
-//    int keysCount = 100;
-//    int valuesPerKeyCount = 1000;
-//
-//    generateValues(keysCount, valuesPerKeyCount);
-//
-//    for (int i = 0; i < keysCount; i++) {
-//      assertTrue(mapdbKVS.contains(new IntWritable(i)));
+  }
+
+  @Test
+  public void testContains() {
+    System.out.println("KVSMultiTest.testContains");
+
+    int keysCount = 100;
+    int valuesPerKeyCount = 1000;
+
+    try {
+      appendToBothKVSs(generateValues(keysCount, valuesPerKeyCount));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    for (int i = 0; i < keysCount; i++) {
+      assertTrue(mapdbKVS.contains(new IntWritable(i)));
 //      assertTrue(leveldbKVS.contains(new IntWritable(i)));
-//    }
-//  }
+    }
+  }
 
   @Test
   public void testIterator() {
     System.out.println("KVSMultiTest.testIterator");
 
-    int keysCount = 2;
-    int valuesPerKeyCount = 2;
+    int keysCount = 1000;
+    int valuesPerKeyCount = 200;
 
     Map<IntWritable, List<IntWritable>> data = generateValues(keysCount, valuesPerKeyCount);
 

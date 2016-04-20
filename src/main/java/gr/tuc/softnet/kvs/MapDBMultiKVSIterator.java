@@ -8,6 +8,7 @@ import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -45,29 +46,14 @@ public class MapDBMultiKVSIterator<K extends WritableComparable, V extends Writa
   public Map.Entry<K, Iterator<V>> next() {
 
     if (!dataIterator.hasNext()) {
-      return null;
+      throw new NoSuchElementException();
     }
 
-    if (currentEntry == null) {
-      currentEntry = dataIterator.next();
-    }
+    Map.Entry<K, Integer> currentKeyWrapper = keysIterator.next();
 
-    K currentKey = keysIterator.next().getKey();
+    MapDBMultiKVSValuesIterator<K, V> valuesIterator = new MapDBMultiKVSValuesIterator<>(
+        dataIterator, currentKeyWrapper.getValue());
 
-    Set<V> values = new HashSet<>();
-
-    while (currentKey == currentEntry.getKey().getKey()) {
-      values.add(currentEntry.getValue());
-      if (!dataIterator.hasNext()) {
-        break;
-      }
-      currentEntry = dataIterator.next();
-    }
-
-    if (values.isEmpty()) {
-      return null;
-    }
-
-    return new AbstractMap.SimpleEntry<>(currentKey, values.iterator());
+    return new AbstractMap.SimpleEntry<>(currentKeyWrapper.getKey(), valuesIterator);
   }
 }
