@@ -11,6 +11,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.ReadOptions;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -34,6 +35,8 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
   private Class<K> keyClass;
   private Class<V> valueClass;
   private Map.Entry<byte[], byte[]> currentEntry;
+  private Configuration hadoopConfiguration;
+  private ReadOptions readOptions;
 
   public LevelDBMultiKVSIterator(DB keysDB, DB dataDB, Class<K> keyClass,
                                  Class<V> valueClass) {
@@ -43,9 +46,13 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
     this.valueClass = valueClass;
     keysIterator = keysDB.iterator();
     keysIterator.seekToFirst();
+    readOptions = new ReadOptions();
+    readOptions.fillCache(false);
+//    dataIterator = dataDB.iterator(readOptions);
     dataIterator = dataDB.iterator();
     dataIterator.seekToFirst();
     currentEntry = null;
+    hadoopConfiguration = new Configuration();
   }
 
   @Override
@@ -54,7 +61,7 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
     System.out.println("Keys:");
     while (keysIterator.hasNext()) {
       Map.Entry<byte[], byte[]> keysEntry = keysIterator.next();
-      K key = ReflectionUtils.newInstance(keyClass, new Configuration());
+      K key = ReflectionUtils.newInstance(keyClass, hadoopConfiguration);
       ByteArrayDataInput input = ByteStreams.newDataInput(keysEntry.getKey());
       try {
         key.readFields(input);
@@ -68,8 +75,18 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
     System.out.println("Values: ");
     while (dataIterator.hasNext()) {
       Map.Entry<byte[], byte[]> dataEntry = dataIterator.next();
+
+      byte[] wrapperBytes = dataEntry.getKey();
+      KeyWrapper<K> wrapper = new KeyWrapper<>(keyClass);
+      ByteArrayDataInput wrapperInput = ByteStreams.newDataInput(wrapperBytes);
+      try {
+        wrapper.readFields(wrapperInput);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
       System.out.println(new BigInteger(dataEntry.getValue()));
-      V value = ReflectionUtils.newInstance(valueClass, new Configuration());
+      V value = ReflectionUtils.newInstance(valueClass, hadoopConfiguration);
       ByteArrayDataInput input = ByteStreams.newDataInput(dataEntry.getValue());
       try {
         value.readFields(input);
@@ -78,7 +95,6 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
       }
       System.out.println("value = " + value.toString());
     }
-
     return this;
   }
 
@@ -90,6 +106,11 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
   @Override
   public Map.Entry<K, Iterator<V>> next() {
     if (!dataIterator.hasNext()) {
+      try {
+        dataIterator.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
       return null;
     }
 
@@ -124,7 +145,7 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
 
   private <T extends Writable> T getFromBytes(byte[] bytes, Class<T> tClass) throws IOException {
     ByteArrayDataInput input = ByteStreams.newDataInput(bytes);
-    T result = ReflectionUtils.newInstance(tClass, new Configuration());
+    T result = ReflectionUtils.newInstance(tClass, hadoopConfiguration);
     result.readFields(input);
     return result;
   }
