@@ -12,6 +12,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBFactory;
+import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
@@ -188,12 +189,13 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
   @Override
   public Iterable<Map.Entry<K, V>> iterator() {
     iteratorReturned = true;
+    flush();
     return new LevelDBSingleKVSIterator<>(dataDB, keyClass, valueClass);
   }
 
   @Override
   public boolean contains(K key) {
-    return get(key) == null;
+    return get(key) != null;
   }
 
   @Override

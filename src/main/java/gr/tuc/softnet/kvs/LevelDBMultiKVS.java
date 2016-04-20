@@ -1,13 +1,17 @@
 package gr.tuc.softnet.kvs;
 
+import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBFactory;
+import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.Options;
 import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
@@ -16,6 +20,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -43,7 +48,7 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
   private DBFactory dbfactory;
   private Class<V> valueClass;
   private Class<K> keyClass;
-  private int batchSize = 50000;
+  private int batchSize = 1;
   private int batchCount = 0;
   private int size = 0;
 
@@ -114,22 +119,81 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
         counter = Integer.parseInt(new String(count));
         counter += 1;
       }
-      KeyWrapper<K> wrapper = new KeyWrapper<K>(key, counter);
+      KeyWrapper<K> wrapper = new KeyWrapper<>(key, counter);
       wrapper.write(keyWrapper);
-      byte[] keyvalue = bytes(counter.toString());
-      keysDB.put(keyBytes.toByteArray(), keyvalue, writeOptions);
-      batch.put(keyWrapper.toByteArray(), valueBytes.toByteArray());
-      batchCount++;
-      if (batchCount >= batchSize) {
-        try {
-          dataDB.write(batch, writeOptions);
-          batch.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-        batch = dataDB.createWriteBatch();
-        batchCount = 0;
-      }
+      keysDB.put(keyBytes.toByteArray(), bytes(counter.toString()), writeOptions);
+      dataDB.put(keyWrapper.toByteArray(), valueBytes.toByteArray(), writeOptions);
+//      batch.put(keyWrapper.toByteArray(), valueBytes.toByteArray());
+//      batchCount++;
+//      if (batchCount >= batchSize) {
+//        try {
+//          dataDB.write(batch, writeOptions);
+//          batch.close();
+//        } catch (IOException e) {
+//          e.printStackTrace();
+//        }
+//        batch = dataDB.createWriteBatch();
+//        batchCount = 0;
+//      }
+
+//      {
+//        // Test a read
+//        byte[] readValueBytes = dataDB.get(keyWrapper.toByteArray());
+//        ByteArrayDataInput input = ByteStreams.newDataInput(readValueBytes);
+//        V recoveredValue = ReflectionUtils.newInstance(valueClass, new Configuration());
+//        ByteArrayDataInput valueInput = ByteStreams.newDataInput(readValueBytes);
+//        recoveredValue.readFields(valueInput);
+//        System.out.println();
+//      }
+//
+//      {
+//        // Test iteration
+//        DBIterator iterator = dataDB.iterator();
+//        iterator.seekToFirst();
+//        while (iterator.hasNext()) {
+//          Map.Entry<byte[], byte[]> e = iterator.next();
+//
+//          byte[] readKeyBytes = e.getKey();
+//          ByteArrayDataInput keyInput = ByteStreams.newDataInput(readKeyBytes);
+//          KeyWrapper<K> recoveredKeyWrapper = new KeyWrapper<K>(keyClass);
+//          recoveredKeyWrapper.readFields(keyInput);
+//          System.out.println();
+//
+//          byte[] readValueBytes = e.getValue();
+//          ByteArrayDataInput input = ByteStreams.newDataInput(readValueBytes);
+//          V recoveredValue = ReflectionUtils.newInstance(valueClass, new Configuration());
+//          recoveredValue.readFields(input);
+//          System.out.println();
+//        }
+//      }
+//      {
+//        // Another test
+//        System.out.println("Values: ");
+//        DBIterator dataIterator = dataDB.iterator();
+//        dataIterator.seekToFirst();
+//        while (dataIterator.hasNext()) {
+//          Map.Entry<byte[], byte[]> dataEntry = dataIterator.next();
+//
+//          byte[] wrapperBytes = dataEntry.getKey();
+//          KeyWrapper<K> w = new KeyWrapper<>(keyClass);
+//          ByteArrayDataInput wrapperInput = ByteStreams.newDataInput(wrapperBytes);
+//          try {
+//            w.readFields(wrapperInput);
+//          } catch (IOException e) {
+//            e.printStackTrace();
+//          }
+//
+//          System.out.println(new BigInteger(dataEntry.getValue()));
+//          V v = ReflectionUtils.newInstance(valueClass, new Configuration());
+//          ByteArrayDataInput input = ByteStreams.newDataInput(dataEntry.getValue());
+//          try {
+//            v.readFields(input);
+//          } catch (IOException e) {
+//            e.printStackTrace();
+//          }
+//          System.out.println("value = " + v.toString());
+//        }
+//      }
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -178,23 +242,20 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public Iterable<Map.Entry<K, Iterator<V>>> iterator() {
-    return null;
+    flush();
+    return new LevelDBMultiKVSIterator<>(dataDB, keysDB, keyClass, valueClass);
   }
 
   @Override
   public boolean contains(K key) {
-    KeyWrapper<K> wrapper = new KeyWrapper<>(key, 0);
-    ByteArrayDataOutput output = ByteStreams.newDataOutput();
+    ByteArrayDataOutput keyBytes = ByteStreams.newDataOutput();
     try {
-      wrapper.write(output);
+      key.write(keyBytes);
     } catch (IOException e) {
       e.printStackTrace();
     }
-    byte[] values = keysDB.get(output.toByteArray());
-    if (values == null) {
-      return false;
-    }
-    return true;
+    byte[] count = keysDB.get(keyBytes.toByteArray());
+    return count != null;
   }
 
   @Override

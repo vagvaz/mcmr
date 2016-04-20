@@ -33,13 +33,13 @@ public class PipelineSingleTest extends TestCase {
 
   @Test
   public void testGetName() {
-    System.out.println("Testing getName");
+    System.out.println("PipelineSingleTest.testGetName");
     assertEquals("testName", kvs.getName());
   }
 
   @Test
   public void testIterator() {
-    System.out.println("Testing iterator");
+    System.out.println("PipelineSingleTest.testIterator");
     for (int i = 0; i < configuration.getBatchSize(); i++) {
       kvs.put(new IntWritable(i), new IntWritable(i));
     }
@@ -63,7 +63,7 @@ public class PipelineSingleTest extends TestCase {
 
   @Test
   public void testPuts() {
-    System.out.println("Testing puts");
+    System.out.println("PipelineSingleTest.testPuts");
     Observable observable = Observable.create(kvs);
     observable.subscribe(new TestSubscriber());
 
@@ -75,7 +75,7 @@ public class PipelineSingleTest extends TestCase {
 
   @Test
   public void testGets() {
-    System.out.println("Testing gets");
+    System.out.println("PipelineSingleTest.testGets");
     for (int i = 0; i < configuration.getBatchSize() - 1; i++) {  // don't let the kvs flush
       kvs.put(new IntWritable(i), new IntWritable(i));
     }

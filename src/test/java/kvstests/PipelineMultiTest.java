@@ -30,7 +30,7 @@ public class PipelineMultiTest extends TestCase {
   }
 
   public void testAppends() {
-    System.out.println("Testing appends");
+    System.out.println("PipelineMultiTest.testAppends");
     Observable observable = Observable.create(kvs);
     observable.subscribe(new PipelineMultiTest.TestSubscriber());
 
