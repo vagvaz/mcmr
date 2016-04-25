@@ -2,7 +2,6 @@ package gr.tuc.softnet.netty.messages;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.sun.tools.javadoc.Start;
 import gr.tuc.softnet.engine.TaskConfiguration;
 
 import java.io.*;
