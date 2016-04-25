@@ -16,4 +16,5 @@ public interface KVSManager extends MCInitializable {
     < K extends WritableComparable, V extends Writable> KVSProxy<K,V> getKVSProxy(String name);
 
 
+  KVSConfiguration getKVSConfiguration(String name);
 }

@@ -3,6 +3,8 @@ package gr.tuc.softnet.mapred;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.security.Credentials;
 
@@ -12,7 +14,7 @@ import java.net.URI;
 /**
  * Created by vagvaz on 17/03/16.
  */
-public class MCMapper<KEYIN, VALUEIN,KEYOUT,VALUEOUT> extends Mapper<KEYIN, VALUEIN,KEYOUT,VALUEOUT> {
+public class MCMapper<KEYIN extends WritableComparable, VALUEIN extends Writable,KEYOUT extends WritableComparable,VALUEOUT extends Writable> extends Mapper<KEYIN, VALUEIN,KEYOUT,VALUEOUT> {
 
     /**
      * Get a wrapped {@link Mapper.Context} for custom implementations.
@@ -28,12 +30,19 @@ public class MCMapper<KEYIN, VALUEIN,KEYOUT,VALUEOUT> extends Mapper<KEYIN, VALU
     public class Context
             extends Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>.Context {
 
-        protected MapContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> mapContext;
+        protected MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> mapContext;
 
         public Context(MapContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> mapContext) {
-            this.mapContext = mapContext;
+            this.mapContext = (MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) mapContext;
         }
 
+        public boolean isPipelined(){
+            return this.mapContext.isPipelined();
+        }
+
+        public boolean isMap(){
+            return this.mapContext.isMap();
+        }
         /**
          * Get the input split for this map.
          */

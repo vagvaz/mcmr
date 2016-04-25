@@ -5,6 +5,8 @@ import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
 import gr.tuc.softnet.engine.TaskStatus;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -16,7 +18,7 @@ import java.util.Map;
 /**
  * Created by vagvaz on 03/03/16.
  */
-public class MCReduceLocalTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl implements MCTask{
+public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends Writable,OUTKEY extends WritableComparable, OUTVALUE extends Writable> extends MCTaskBaseImpl implements MCTask{
     Class reducerClass;
     MCReducer<INKEY,INVALUE,OUTKEY, OUTVALUE> reducer;
 

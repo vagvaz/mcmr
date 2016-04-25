@@ -3,6 +3,8 @@ package gr.tuc.softnet.mapred;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.security.Credentials;
 
@@ -12,7 +14,7 @@ import java.net.URI;
 /**
  * Created by vagvaz on 08/03/16.
  */
-public abstract class MCReducer<KEYIN, VALUEIN,KEYOUT,VALUEOUT> extends Reducer<KEYIN, VALUEIN,KEYOUT,VALUEOUT> {
+public abstract class MCReducer<KEYIN extends WritableComparable, VALUEIN extends Writable,KEYOUT extends WritableComparable,VALUEOUT extends Writable> extends Reducer<KEYIN, VALUEIN,KEYOUT,VALUEOUT> {
     public Reducer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>.Context
     getReducerContext(ReduceContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext) {
         return new Context(reduceContext);
@@ -37,11 +39,19 @@ public abstract class MCReducer<KEYIN, VALUEIN,KEYOUT,VALUEOUT> extends Reducer<
     public class Context
             extends Reducer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>.Context {
 
-        protected ReduceContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext;
+        protected MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext;
 
         public Context(ReduceContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext)
         {
-            this.reduceContext = reduceContext;
+            this.reduceContext = (MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) reduceContext;
+        }
+
+        public boolean isLocalReduce(){
+            return this.reduceContext.isLocalReduce();
+        }
+
+        public boolean isPipelined(){
+            return this.reduceContext.isPipelined();
         }
 
         @Override

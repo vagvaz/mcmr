@@ -26,6 +26,9 @@ public class NettyMessageHandler extends ChannelInboundHandlerAdapter {
   int replied = 0;
 
   public NettyMessageHandler() {
+
+  }
+  public void initialize(){
     threadPoolExecutor = new ThreadPoolExecutor(8,8,1000, TimeUnit.MILLISECONDS,  new LinkedBlockingDeque<Runnable>());
   }
 

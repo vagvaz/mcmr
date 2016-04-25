@@ -6,10 +6,10 @@ import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.core.NodeStatus;
 import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.*;
+import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.KVSManager;
-import gr.tuc.softnet.kvs.KVSProxy;
 import gr.tuc.softnet.kvs.KeyValueStore;
-import gr.tuc.softnet.netty.messages.MCMessage;
+import gr.tuc.softnet.netty.messages.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -31,6 +31,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class is used to actually transfer/receive data from other nodes.
@@ -58,7 +59,7 @@ public class NettyDataTransport implements MCDataTransport {
    Set<ChannelFuture> channelFutures;
    Map<String,ChannelFuture> nodes;
    String me;
-   Map<Channel,Set<Integer>> pending;
+   Map<Channel,Set<Long>> pending;
   private  NettyClientChannelInitializer clientChannelInitializer;
   private  NettyServerChannelInitializer serverChannelInitializer;
   private  ChannelFuture serverFuture;
@@ -67,6 +68,9 @@ public class NettyDataTransport implements MCDataTransport {
   private  Logger log = LoggerFactory.getLogger(NettyDataTransport.class);
   private  boolean nodesInitialized = false;
   private  boolean discard = false;
+  private AtomicLong requestID = new AtomicLong(0);
+  private Map<Long,MCMessage> requests;
+  private Map<Long,Object> mutexes;
 
 
   @Override
@@ -124,7 +128,7 @@ public class NettyDataTransport implements MCDataTransport {
 
             ok = true;
             nodes.put(host,f);
-            pending.put(f.channel(),new HashSet<Integer>(100));
+            pending.put(f.channel(),new HashSet<Long>(100));
             channelFutures.add(f);
             histogram.put(host,0L);
           } catch (Exception e) {
@@ -169,6 +173,7 @@ public class NettyDataTransport implements MCDataTransport {
    */
   @Override
   public  void send(Channel channel, String indexName, Object key, Object value) {
+    //DEPRECATED
     send(channel.remoteAddress().toString(),indexName,key,value);
   }
 
@@ -191,19 +196,35 @@ public class NettyDataTransport implements MCDataTransport {
 
   @Override
   public  void send(String target, String cacheName, byte[] bytes) {
-    NettyMessage nettyMessage = new NettyMessage(cacheName,bytes,getCounter());
-    ChannelFuture f = nodes.get(target);
-    if(!discard) {
-      pending.get(f.channel()).add(nettyMessage.getMessageId());
-
-      updateHistogram(target, bytes);
-
-      f.channel().write(nettyMessage, f.channel().voidPromise());
-    }
+//    NettyMessage nettyMessage = new NettyMessage(cacheName,bytes,getCounter());
+//    ChannelFuture f = nodes.get(target);
+//    if(!discard) {
+//      pending.get(f.channel()).add(nettyMessage.getMessageId());
+//
+//      updateHistogram(target, bytes);
+//
+//      f.channel().write(nettyMessage, f.channel().voidPromise());
+//    }
   }
 
   @Override public void send(String target, MCMessage message) {
+    MCMessageWrapper wrapper = new MCMessageWrapper(message,getRequestID());
+    ChannelFuture f = nodes.get(target);
+    {
+      pending.get(f.channel()).add(wrapper.getRequestId());
+      updateHistogram(target,wrapper.bytesSize());
+      f.channel().write(wrapper,f.channel().voidPromise());
+    }
+  }
 
+  @Override public long sendRequest(String target, MCMessage message) {
+    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
+
+    ChannelFuture future = nodes.get(target);
+    pending.get(future.channel()).add(wrapper.getRequestId());
+    mutexes.put(wrapper.getRequestId(),new Object());
+    future.channel().write(wrapper);
+    return wrapper.getRequestId();
   }
 
   private  void updateHistogram(String target, byte[] bytes) {
@@ -242,7 +263,7 @@ public class NettyDataTransport implements MCDataTransport {
     for(Map.Entry<String,ChannelFuture> entry: nodes.entrySet()){
       entry.getValue().channel().flush();
     }
-    for(Map.Entry<Channel,Set<Integer>> entry : pending.entrySet()){
+    for(Map.Entry<Channel,Set<Long>> entry : pending.entrySet()){
       entry.getKey().flush();
       while(entry.getValue().size() > 0 ){
         try {
@@ -266,18 +287,49 @@ public class NettyDataTransport implements MCDataTransport {
     return nodes;
   }
 
-  @Override
-  public <K, V> V remoteGet(String nodeName, K key) {
-    return null;
+  @Override public <K extends WritableComparable, V extends Writable> V remoteGet(String kvsName,
+    String nodeName, K key) {
+    KVSGet<K> message = new KVSGet<>(kvsName,key, (Class<K>) key.getClass());
+    long requestID = sendRequest(nodeName,message);
+    MCMessage response = getRequestResult(requestID);
+    KVSGetResponse getResponse = (KVSGetResponse) response;
+    return (V) getResponse.getValue();
   }
 
+  private MCMessage getRequestResult(long requestID) {
+    MCMessage response = requests.get(requestID);
+    if(response == null){
+      waitForResult(requestID);
+    }
+    return requests.get(response);
+  }
+
+  private void waitForResult(long requestID) {
+    Object mutex = mutexes.get(requestID);
+    synchronized (mutex){
+      while(!requests.containsKey(requestID)) {
+        try {
+          mutex.wait(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
+
   @Override
-  public int remoteSize(String node) {
+  public int remoteSize(String name, String node)
+  {
     return 0;
   }
 
   @Override
-  public <K> boolean remoteContains(String node, K key) {
+  public <K extends WritableComparable> boolean remoteContains(String node, String kvsName, K key)
+  {
+    KVSContains message = new KVSContains(kvsName,key,key.getClass());
+    long responseID = sendRequest(node,message);
+    waitForResult(responseID);
     return false;
   }
 
@@ -286,165 +338,72 @@ public class NettyDataTransport implements MCDataTransport {
 
   }
 
+  @Override public MCConfiguration getConfiguration() {
+    return this.globalConfiguration;
+  }
 
+  @Override public void createKVS(String name, KVSConfiguration kvsConfiguration) {
+      for(String node : nodes.keySet()){
+        if(!node.equals(me)){
+          KVSCreate message = new KVSCreate(name,kvsConfiguration);
+          send(node,message);
+        }
+      }
+  }
 
-  @Override
-  public boolean startJob(List<NodeStatus> nodes, JobConfiguration jobConfiguration) {
+  @Override public void startTask(TaskConfiguration task) {
+
+  }
+
+  @Override public boolean cancelJob(List<NodeStatus> nodes, String jobID) {
     return false;
   }
 
-  @Override
-  public boolean startJob(JobConfiguration jobConfiguration) {
-    return false;
-  }
-
-  @Override
-  public boolean cancelJob(List<NodeStatus> nodes, String jobID) {
-    return false;
-  }
-
-  @Override
-  public boolean cancelJob(String jobID) {
-    return false;
-  }
-
-  @Override
-  public void completedJob(String jobID) {
-
-  }
 
   @Override
   public JobStatus getJobStatus(String jobID) {
     return null;
   }
 
-  @Override
-  public void waitForCompletion(String jobID) {
+  @Override public void taskCompleted(String coordinator, String targetCloud, String id) {
 
   }
 
-  @Override
-  public void taskCompleted(String jobID, String id) {
-
-  }
-
-  @Override
-  public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> createKVS(String name, Configuration configuration) {
+  @Override public KeyValueStore getKVS(String cache) {
     return null;
   }
 
-  @Override
-  public boolean destroyKVS(String name) {
-    return false;
-  }
-
-  @Override
-  public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> getKVS(String name) {
+  @Override public NodeStatus getNodeStatus(String nodeID) {
     return null;
   }
 
-  @Override
-  public <K extends WritableComparable, V extends Writable> KVSProxy<K, V> getKVSProxy(String name) {
+  @Override public void killNode(String nodeID) {
+
+  }
+
+  @Override public void resetNode(String nodeID) {
+
+  }
+
+  @Override public Map<String, Map<String, NodeStatus>> getMicrocloudInfo() {
     return null;
   }
 
-  @Override
-  public void updateNodes(Configuration configuration) {
-
-  }
-
-  @Override
-  public NodeStatus getNodeStatus(String nodeID) {
+  @Override public Map<String, NodeStatus> getMicrocloudInfo(String siteName) {
     return null;
   }
 
-  @Override
-  public void killNode(String nodeID) {
-
+  @Override public void batchSend(String nodeName, String kvsName, byte[] bytes,
+    Class<? extends WritableComparable> keyClass, Class<? extends Writable> valueClass) {
+    ChannelFuture channel = nodes.get(nodeName);
+    KVSBatchPut message = new KVSBatchPut(keyClass,valueClass,bytes,kvsName);
+    MCMessageWrapper wrapper = new MCMessageWrapper(message,getRequestID());
+    channel.channel().write(wrapper);
   }
 
-  @Override
-  public void resetNode(String nodeID) {
 
-  }
 
-  @Override
-  public Map<String, Map<String, NodeStatus>> getMicrocloudInfo() {
-    return null;
-  }
-
-  @Override
-  public Map<String, NodeStatus> getMicrocloudInfo(String siteName) {
-    return null;
-  }
-
-  @Override
-  public Map<String, NodeStatus> getLocalcloudInfo() {
-    return null;
-  }
-
-  @Override
-  public String getLocalcloudName() {
-    return null;
-  }
-
-  @Override
-  public void initialize(String configurationDirectory) {
-
-  }
-
-  @Override
-  public void reset() {
-
-  }
-
-  @Override
-  public List<NodeStatus> getNodeStatus(List<String> microclouds) {
-    return null;
-  }
-
-//  @Override
-//  public boolean startTask(Configuration taskConfiguration) {
-//    return false;
-//  }
-
-  @Override
-  public boolean startTask(TaskConfiguration taskConfiguration) {
-    return false;
-  }
-
-  @Override
-  public TaskStatus getTaskStatus(String taskID) {
-    return null;
-  }
-
-  @Override
-  public boolean cancelTask(String taskID) {
-    return false;
-  }
-
-  @Override
-  public void waitForTaskCompletion(String taskID) {
-
-  }
-
-  @Override
-  public String getID() {
-    return null;
-  }
-
-  @Override
-  public MCConfiguration getConfiguration() {
-    return null;
-  }
-
-  @Override
-  public void waitForExit() {
-
-  }
-
-  @Override
-  public void kill() {
-
+  public long getRequestID() {
+    return requestID.incrementAndGet();
   }
 }

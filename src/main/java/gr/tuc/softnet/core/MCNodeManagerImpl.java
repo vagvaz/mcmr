@@ -112,6 +112,10 @@ public class MCNodeManagerImpl implements NodeManager, MCNode{
         return null;
     }
 
+    @Override public String getNodeID() {
+        return getID();
+    }
+
     public String getID() {
         return configuration.getNodeName();
     }

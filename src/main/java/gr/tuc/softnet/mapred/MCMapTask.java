@@ -3,6 +3,8 @@ package gr.tuc.softnet.mapred;
 import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -14,91 +16,94 @@ import java.util.Map;
 /**
  * Created by vagvaz on 03/03/16.
  */
-public class MCMapTask<INKEY,INVALUE,OUTKEY, OUTVALUE> extends MCTaskBaseImpl implements MCTask{
-    Class<?> mapperClass;
-    MCMapper<INKEY,INVALUE,OUTKEY, OUTVALUE> mapper;
+public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writable, OUTKEY extends WritableComparable, OUTVALUE extends Writable> extends MCTaskBaseImpl implements MCTask {
+  Class<?> mapperClass;
+  MCMapper<INKEY, INVALUE, OUTKEY, OUTVALUE> mapper;
 
 
-    org.slf4j.Logger logger = LoggerFactory.getLogger(MCFederationReduceTask.class);
-    public MCMapTask(){
+  org.slf4j.Logger logger = LoggerFactory.getLogger(MCFederationReduceTask.class);
 
+  public MCMapTask() {
+
+  }
+
+  private Mapper<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context context;
+  Subscriber<Map.Entry<INKEY, INVALUE>> subscriber = new Subscriber<Map.Entry<INKEY, INVALUE>>() {
+    @Override public void onCompleted() {
+      inputEnabled = false;
     }
 
-    private Mapper<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context context;
-    Subscriber<Map.Entry<INKEY,INVALUE>> subscriber = new Subscriber<Map.Entry<INKEY, INVALUE>>() {
-        @Override
-        public void onCompleted() {
-            inputEnabled = false;
-        }
+    @Override public void onError(Throwable e) {
 
-        @Override
-        public void onError(Throwable e) {
-
-            PrintUtilities.logStackTrace(logger,e.getStackTrace());
-            status.setException(e);
-            inputEnabled = false;
-        }
-
-        @Override
-        public void onNext(Map.Entry<INKEY, INVALUE> entry) {
-            try {
-                mapper.map(entry.getKey(),entry.getValue(),context);
-            } catch (IOException e) {
-                Observable.create(inputStore).subscribe(subscriber);
-                status.setException(e);
-                inputEnabled = false;
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                status.setException(e);
-                inputEnabled = false;
-            }
-        }
-    };
-
-
-    public void initialize(TaskConfiguration configuration){
-        super.initialize(configuration);
-        mapperClass = configuration.getMapperClass();
-        mapper = initializeMapper(mapperClass,keyClass,valueClass,outKeyClass,outValueClass);
-        Observable ob = Observable.create(inputStore);
-        ob.subscribe(subscriber);
+      PrintUtilities.logStackTrace(logger, e.getStackTrace());
+      status.setException(e);
+      synchronized (mutex) {
+        inputEnabled = false;
+        mutex.notifyAll();
+      }
     }
 
-    @Override
-    public boolean start() {
-        return false;
+    @Override public void onNext(Map.Entry<INKEY, INVALUE> entry) {
+      try {
+        mapper.map(entry.getKey(), entry.getValue(), context);
+      } catch (IOException e) {
+        Observable.create(inputStore).subscribe(subscriber);
+        status.setException(e);
+        inputEnabled = false;
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        status.setException(e);
+        inputEnabled = false;
+      }
     }
+  };
 
 
-    @Override
-    public void run() {
-        while(enabledInput()){
+  public void initialize(TaskConfiguration configuration) {
+    super.initialize(configuration);
+    mapperClass = configuration.getMapperClass();
+    mapper = initializeMapper(mapperClass, keyClass, valueClass, outKeyClass, outValueClass);
+    Observable ob = Observable.create(inputStore);
+    ob.subscribe(subscriber);
+  }
 
-        }
-        finalizeTask();
-        for(Object ob : subscribers){
-            Subscriber<? super MCTask> subscriber = (Subscriber<? super MCTask>) ob;
-            subscriber.onNext(this);
-            subscriber.onCompleted();
-        }
+  @Override public boolean start() {
+    return false;
+  }
 
-    }
 
-    @Override
-    public void finalizeTask() {
+  @Override public void run() {
+    synchronized (mutex) {
+      while (enabledInput()) {
         try {
-            mapper.cleanup(context);
-        } catch (IOException e) {
-            e.printStackTrace();
+          mutex.wait();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+          e.printStackTrace();
         }
+      }
+    }
+    finalizeTask();
+    for (Object ob : subscribers) {
+      Subscriber<? super MCTask> subscriber = (Subscriber<? super MCTask>) ob;
+      subscriber.onNext(this);
+      subscriber.onCompleted();
     }
 
-    @Override
-    public boolean enabledInput() {
-        return inputEnabled;
+  }
+
+  @Override public void finalizeTask() {
+    try {
+      mapper.cleanup(context);
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
+  }
+
+  @Override public boolean enabledInput() {
+    return inputEnabled;
+  }
 
 }

@@ -60,8 +60,8 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable,INVALUE ex
     public void initialize(TaskConfiguration configuration) {
         this.configuration = configuration;
         taskContext = new MCTaskContext<INKEY,INVALUE,OUTKEY,OUTVALUE>(configuration,kvsManager);
-        keyClass = configuration.getKeyClass();
-        valueClass = configuration.getValueClass();
+        keyClass = (Class<INKEY>) configuration.getKeyClass();
+        valueClass = (Class<INVALUE>) configuration.getValueClass();
         outKeyClass = (Class<OUTKEY>) configuration.getOutKeyClass();
         outValueClass= (Class<OUTVALUE>) configuration.getOutValueClass();
         status = new TaskStatus(configuration);

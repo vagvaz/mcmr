@@ -4,6 +4,8 @@ import com.google.inject.Inject;
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.netty.MCDataTransport;
 import org.apache.commons.collections.FastTreeMap;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import rx.Subscriber;
 
 import java.util.Iterator;
@@ -14,9 +16,10 @@ import java.util.SortedMap;
 /**
  * Created by vagvaz on 16/02/16.
  */
-public class KVSProxy<K,V> implements KeyValueStore<K,V> {
+public class KVSProxy<K extends WritableComparable,V extends Writable> implements KeyValueStore<K,V> {
     String name;
     MCPartitioner partitioner;
+    @Inject
     NodeManager nodeManager;
     List<String> nodeNames;
     @Inject
@@ -31,8 +34,19 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
 
     public void initialize(String name , MCPartitioner partitioner){
         this.name = name;
+        for(String node : dataTransport.getNodes().keySet()){
+            nodeNames.add(node);
+        }
         dataBuffers = new FastTreeMap();
+        if(nodeNames != null) {
+            for (int i = 0; i < nodeNames.size(); i++) {
+                dataBuffers.put(i,
+                  new MCDataBufferImpl(kvsManager.getKVSConfiguration(name), dataTransport,
+                    nodeNames.get(i), dataTransport.getConfiguration()));
+            }
+        }
         this.partitioner = partitioner;
+
     }
 
     public void put(K key, V value) {
@@ -57,7 +71,7 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
         int index = partitioner.partition(key,nodeNames.size());
         V result = null;
         try{
-            result = dataTransport.remoteGet(nodeNames.get(index),key);
+            result = dataTransport.remoteGet(name,nodeNames.get(index),key);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -85,7 +99,7 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
     public int totalSize(){
         int result = 0;
         for(String node : nodeNames){
-            result += dataTransport.remoteSize(node);
+            result += dataTransport.remoteSize(name,node);
         }
         return result;
     }
@@ -108,7 +122,7 @@ public class KVSProxy<K,V> implements KeyValueStore<K,V> {
         int index = partitioner.partition(key,nodeNames.size());
         boolean result = false;
         try{
-            result = dataTransport.remoteContains(nodeNames.get(index),key);
+            result = dataTransport.remoteContains(name,nodeNames.get(index),key);
         }catch(Exception e){
             e.printStackTrace();
         }

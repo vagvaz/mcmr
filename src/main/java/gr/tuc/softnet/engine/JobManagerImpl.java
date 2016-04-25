@@ -42,17 +42,17 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     public boolean startJob(List<NodeStatus> nodes, JobConfiguration jobConfiguration) {
         MCJob job = JobUtils.getJob(jobConfiguration);
         job.setNodes(nodes);
-        return boostrapJob(job);
+        return bootstrapJob(job);
     }
 
     @Override
     public boolean startJob(JobConfiguration jobConfiguration) {
         MCJob job = JobUtils.getJob(jobConfiguration);
         jobInfo.put(job.getID(),job);
-        return boostrapJob(job);
+        return bootstrapJob(job);
     }
 
-    private boolean boostrapJob(MCJob job) {
+    private boolean bootstrapJob(MCJob job) {
         KVSConfiguration kvsConfiguration = job.getMapOuputConfiguration();
         kvsManager.createKVS(kvsConfiguration.getName(),kvsConfiguration);
         if(job.getJobConfiguration().hasLocalReduce()){
@@ -98,7 +98,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         MCJob job = jobInfo.get(jobID);
         if(job == null){
             logger.error("Job: " + jobID + "cannot be canceled cause is not handle by " + getID());
-            return true;
+            return false;
         }else{
             for(Map.Entry<NodeStatus,TaskConfiguration> nodeTask: job.getTasks()){
                 if(nodeTask.getKey().getID().equals(getID())){
@@ -107,6 +107,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
                     dataTransport.cancelTask(nodeTask.getKey().getID(),nodeTask.getValue().getID());
                 }
             }
+            result = true;
         }
         return result;
     }
@@ -131,6 +132,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         MCJob job = jobInfo.get(jobID);
         if(job == null) {
             logger.error("waitForCompletion called but " + jobID + " is not handled by " + getID());
+            return;
         }
         job.waitForCompletion();
     }
@@ -149,8 +151,8 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
 
         runReadyTasks(job);
         if(job.isCompleted()){
-            for(Subscriber subscriber : subscribers){
-                subscriber.onNext(job);
+            for(Subscriber<? super String> subscriber : subscribers){
+                subscriber.onNext(job.getID());
                 subscriber.onCompleted();
             }
         }

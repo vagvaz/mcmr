@@ -64,7 +64,7 @@ public class KVSManagerImpl implements KVSManager {
 //        }
         KVSProxy kvsProxy = InjectorUtils.getInjector().getInstance(KVSProxy.class);
         kvsProxy.initialize(kvsConfiguration.getName(),partitioner);
-        KVSWrapper<K,V> wrapper = new KVSWrapper<K, V>(newKVS,kvsProxy);
+        KVSWrapper<K,V> wrapper = new KVSWrapper<K, V>(newKVS,kvsProxy,kvsConfiguration);
         kvsWrapperMap.put(kvsConfiguration.getName(),wrapper);
     }
 
@@ -94,5 +94,13 @@ public class KVSManagerImpl implements KVSManager {
             result = wrapper.getProxy();
         }
         return result;
+    }
+
+    @Override public KVSConfiguration getKVSConfiguration(String name) {
+        KVSWrapper wrapper = kvsWrapperMap.get(name);
+        if(wrapper != null){
+            return wrapper.getConfiguration();
+        }
+        return null;
     }
 }
