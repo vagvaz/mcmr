@@ -1,4 +1,4 @@
-package gr.tuc.softnet.mapred;
+package gr.tuc.softnet.mapred.examples.wordcount;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -10,6 +10,7 @@ import java.util.Map;
 
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.MapDBSingleKVS;
+import gr.tuc.softnet.mapred.MCReducer;
 
 /**
  * Created by ap0n on 25/4/2016.

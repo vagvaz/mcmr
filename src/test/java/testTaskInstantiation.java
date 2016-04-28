@@ -6,7 +6,7 @@ import gr.tuc.softnet.engine.TaskManager;
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KeyValueStore;
-import gr.tuc.softnet.mapred.WordCountMapper;
+import gr.tuc.softnet.mapred.examples.wordcount.WordCountMapper;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 

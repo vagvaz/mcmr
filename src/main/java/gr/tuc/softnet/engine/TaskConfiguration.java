@@ -3,9 +3,8 @@ package gr.tuc.softnet.engine;
 import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.mapred.MCMapper;
-import gr.tuc.softnet.mapred.WordCountMapper;
+
 import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Mapper;
