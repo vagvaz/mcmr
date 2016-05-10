@@ -5,6 +5,7 @@ import org.apache.hadoop.io.Writable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import java.util.Map;
  * Probably not the best name for the class. It models a document but also has utility members used
  * by KMeans map-reduce app
  */
-public class Document implements Writable {
+public class Document implements Writable, Serializable {
 
   private int index;
   private String clusterDocuments;

@@ -9,12 +9,16 @@ import org.apache.hadoop.mapreduce.Reducer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by vagvaz on 03/03/16.
  */
 public class JobConfiguration extends HierarchicalConfiguration {
+
+    private Map jobConf;  // Map<Serializable>
+
     public JobConfiguration(){
         super();
     }
