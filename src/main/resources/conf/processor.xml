@@ -45,6 +45,14 @@
         <mc>
             <name>locacluster</name>
             <node>127.0.0.1:10000</node>
+            <node>127.0.0.1:10001</node>
+            <node>127.0.0.1:10002</node>
+        </mc>
+        <mc>
+            <name>locacluster_1</name>
+            <node>127.0.1.1:10000</node>
+            <node>127.0.1.1:10001</node>
+            <node>127.0.1.1:10002</node>
         </mc>
     </network>
 </mcmapreduce>

@@ -39,7 +39,7 @@ public interface MCDataTransport  {
 
     void waitEverything();
 
-    void acknowledge(Channel owner, int ackMessageId);
+    void acknowledge(Channel owner, long ackMessageId);
 
     Map<String, ChannelFuture> getNodes();
 

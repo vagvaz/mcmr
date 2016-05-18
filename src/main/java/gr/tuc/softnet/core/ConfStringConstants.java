@@ -38,6 +38,8 @@ public class ConfStringConstants {
     public static final java.lang.String IS_LOCAL_REDUCE_PIPELINE = "isLocalReducePipeline";
     public static final java.lang.String IS_FEDERATION_REDUCE_PIPELINE = "isFederationReducePipeline";
     public static final java.lang.String MICRO_CLOUD = "microCloud";
+    public static final String IP = "nodeIP";
+    public static final String PORT = "nodePort";
     public static String MAP_CLASS = "taskMapClass";
     public static String FEDERATION_REDUCER_CLASS = "taskFederationReducerClass";
     public static String LOCAL_REDUCER_CLASS = "taskLocalReducerClass";

@@ -40,6 +40,15 @@ public class StringConstants {
   public static final String LEVELDB = "leveldb";
   public static final String DEFAULT_CONF_DIR = "conf/";
   public static final String BATCH_TASK = "batchTask";
+  public static final String KILL_NODE = "killNode";
+  public static final String RESET_NODE = "resetNode";
+  public static final String NODE_STATUS = "nodeStatus";
+  public static final String CANCEL_JOB = "cancelJob";
+  public static final String GET_JOB_STATUS = "getJobStatus";
+  public static final String TASK_COMPLETED = "taskCompleted";
+  public static final String START_TASK = "startTask";
+  public static final String SUBMIT_JOB = "submitJob";
+  public static final String JOB_COMPLETED = "jobCompleted";
   public static String PIPELINE_TASK = "pipelineTask";
   public static java.lang.String SIZES_CACHE = "sizesCache";
   public static String PIPELINE = "pipeline";

@@ -19,7 +19,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.slf4j.Logger;
@@ -71,6 +73,7 @@ public class NettyDataTransport implements MCDataTransport {
   private AtomicLong requestID = new AtomicLong(0);
   private Map<Long,MCMessage> requests;
   private Map<Long,Object> mutexes;
+  private Map<String, Map<String, NodeStatus>> cloudInfo;
 
 
   @Override
@@ -103,6 +106,7 @@ public class NettyDataTransport implements MCDataTransport {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
+    initializeNodes();
   }
 
   @Override
@@ -110,27 +114,28 @@ public class NettyDataTransport implements MCDataTransport {
     if(nodesInitialized){
       return;
     }
-    Configuration componentAddrs = globalConfiguration.conf("componentsAddrs");
-    List<String> clouds = new ArrayList(componentAddrs.getList("engine.nodes"));
-    Collections.sort(clouds);
-    for(String microCloud : clouds ){
-      List<String> array = clouds;//TODOcomponentAddrs.getList(microCloud);
-      String microCloudIPs = array.get(0);
-      String[] URIs = microCloudIPs.split(";");
-      for(String URI : URIs){
-        String[] parts = URI.split(":");
-        String host = parts[0];
-        String portString = parts[1];
+    cloudInfo = new HashedMap();
+    HierarchicalConfiguration conf =
+      (HierarchicalConfiguration) globalConfiguration.getConfigurations().get("conf/conf/processor.xml");
+    List<HierarchicalConfiguration> mcs = conf.configurationsAt("network.mc");
+    for(HierarchicalConfiguration c : mcs){
+      Map<String,NodeStatus> newCloud = new HashedMap();
+      String cloud = c.getString("name");
+      cloudInfo.put(cloud,newCloud);
+      List<Object> nodes = c.getList("node");
+      for(Object node : nodes){
+        NodeStatus status = new NodeStatus((String) node,cloud);
+        newCloud.put(status.getID(),status);
         boolean ok = false;
         while(!ok){
           try {
-            ChannelFuture f = clientBootstrap.connect(host,getPort(portString)).sync();
+            ChannelFuture f = clientBootstrap.connect(status.getIP(),status.getPort()).sync();
 
             ok = true;
-            nodes.put(host,f);
+            this.nodes.put(status.getIP(),f);
             pending.put(f.channel(),new HashSet<Long>(100));
             channelFutures.add(f);
-            histogram.put(host,0L);
+            histogram.put(status.getIP(),0L);
           } catch (Exception e) {
             e.printStackTrace();
           }
@@ -278,7 +283,7 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override
-  public  void acknowledge(Channel owner, int ackMessageId) {
+  public  void acknowledge(Channel owner, long ackMessageId) {
     pending.get(owner).remove(ackMessageId);
   }
 
@@ -386,11 +391,11 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
   @Override public Map<String, Map<String, NodeStatus>> getMicrocloudInfo() {
-    return null;
+    return this.cloudInfo;
   }
 
   @Override public Map<String, NodeStatus> getMicrocloudInfo(String siteName) {
-    return null;
+    return this.cloudInfo.get(siteName);
   }
 
   @Override public void batchSend(String nodeName, String kvsName, byte[] bytes,

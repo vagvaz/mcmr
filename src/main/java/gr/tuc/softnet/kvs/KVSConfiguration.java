@@ -4,10 +4,15 @@ import gr.tuc.softnet.core.ConfStringConstants;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 
+import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+import java.util.Iterator;
+
 /**
  * Created by vagvaz on 22/02/16.
  */
-public class KVSConfiguration extends HierarchicalConfiguration {
+public class KVSConfiguration extends HierarchicalConfiguration implements Serializable {
     String defaultBaseDir = System.getProperty("java.io.tmpdir")+"/mcmcr/kvs/";
     boolean defaultIsLocal = false;
     int batchSize;
@@ -87,5 +92,39 @@ public class KVSConfiguration extends HierarchicalConfiguration {
 
     public void setKeyClass(Class<? extends Comparable> keyClass) {
        setProperty(ConfStringConstants.KEY_CLASS,keyClass);
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        Iterator<String> iterator =  this.getKeys();
+        int counter = this.getRootNode().getChildren().size();
+        out.writeInt(counter);
+        while(iterator.hasNext()){
+            if(counter-- < 0)
+            {
+                try {
+                    throw new Exception("counter neg");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            String key = iterator.next();
+            out.writeObject(key);
+            out.writeObject(this.getProperty(key));
+        }
+
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        int sz = in.readInt();
+        while(sz > 0){
+            sz--;
+            String key = (String) in.readObject();
+            Object value = in.readObject();
+            this.setProperty(key,value);
+        }
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+
     }
 }
