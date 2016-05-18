@@ -84,7 +84,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         MCJob job = jobInfo.get(jobID);
         if(job == null){
             logger.error("Job: " + jobID + " is not handled bu this JobManager");
-            return dataTransport.cancelJob(nodes,jobID);
+            return dataTransport.cancelJob(coordinator.getID(), nodes,jobID);
         }
         else{
             cancelJob(jobID);
@@ -121,7 +121,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     public JobStatus getJobStatus(String jobID) {
         MCJob job = jobInfo.get(jobID);
         if(job == null){
-            return dataTransport.getJobStatus(jobID);
+            return dataTransport.getJobStatus(coordinator.getID(), jobID);
         }else{
             return job.getStatus();
         }

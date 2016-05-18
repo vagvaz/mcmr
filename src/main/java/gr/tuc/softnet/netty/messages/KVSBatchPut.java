@@ -3,6 +3,7 @@ package gr.tuc.softnet.netty.messages;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import gr.tuc.softnet.core.StringConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -14,7 +15,7 @@ import java.io.*;
  * Created by vagvaz on 21/04/16.
  */
 public class KVSBatchPut extends MCMessage {
-  public static final String TYPE = "KVSBatchPut";
+  public static final String TYPE = StringConstants.KVS_BATCH_PUT;
   Class<? extends WritableComparable> keyClass;
   Class<? extends Writable> valueClass;
   byte[] data;

@@ -2,7 +2,9 @@ package gr.tuc.softnet.netty;
 
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.core.NodeStatus;
+import gr.tuc.softnet.engine.JobConfiguration;
 import gr.tuc.softnet.engine.JobStatus;
+import gr.tuc.softnet.engine.MCJobProxy;
 import gr.tuc.softnet.engine.TaskConfiguration;
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.KeyValueStore;
@@ -57,9 +59,9 @@ public interface MCDataTransport  {
 
     void startTask(TaskConfiguration task);
 
-    boolean cancelJob(List<NodeStatus> nodes, String jobID);
+    boolean cancelJob(String id, String nodes, List<String> jobID);
 
-    JobStatus getJobStatus(String jobID);
+    JobStatus getJobStatus(String id, String jobID);
 
     void taskCompleted(String coordinator, String targetCloud, String id);
 
@@ -77,4 +79,10 @@ public interface MCDataTransport  {
 
     void batchSend(String nodeName, String kvsName, byte[] bytes,
       Class<? extends WritableComparable> keyClass, Class<? extends Writable> valueClass);
+
+    MCJobProxy submitJob(JobConfiguration configuration, String microcloud);
+
+    MCJobProxy submitJob(JobConfiguration configuration);
+
+    void waitForJobCompletion(String id, String jobID);
 }

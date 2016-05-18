@@ -16,8 +16,7 @@ import java.io.*;
  */
 public class KVSCreate extends MCMessage {
   public static final String TYPE = "KVSCreate";
-  Class<? extends WritableComparable> keyClass;
-  Class<? extends Writable> valueClass;
+
   String kvsName;
   KVSConfiguration configuration;
 
@@ -70,4 +69,19 @@ public class KVSCreate extends MCMessage {
     }
   }
 
+  public String getKvsName() {
+    return kvsName;
+  }
+
+  public void setKvsName(String kvsName) {
+    this.kvsName = kvsName;
+  }
+
+  public KVSConfiguration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(KVSConfiguration configuration) {
+    this.configuration = configuration;
+  }
 }

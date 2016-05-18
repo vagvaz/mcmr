@@ -20,7 +20,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -360,13 +359,13 @@ public class NettyDataTransport implements MCDataTransport {
 
   }
 
-  @Override public boolean cancelJob(List<NodeStatus> nodes, String jobID) {
+  @Override public boolean cancelJob(String id, String nodes, List<String> jobID) {
     return false;
   }
 
 
   @Override
-  public JobStatus getJobStatus(String jobID) {
+  public JobStatus getJobStatus(String id, String jobID) {
     return null;
   }
 
@@ -404,6 +403,28 @@ public class NettyDataTransport implements MCDataTransport {
     KVSBatchPut message = new KVSBatchPut(keyClass,valueClass,bytes,kvsName);
     MCMessageWrapper wrapper = new MCMessageWrapper(message,getRequestID());
     channel.channel().write(wrapper);
+  }
+
+  @Override public MCJobProxy submitJob(JobConfiguration configuration, String microcloud) {
+    NodeStatus node = cloudInfo.get(microcloud).values().iterator().next();
+    MCJobProxy jobProxy = new MCJobProxy(node,configuration,this);
+    SubmitJob newJob = new SubmitJob(me,configuration);
+    this.send(node.getID(),newJob);
+    return jobProxy;
+  }
+
+  @Override public MCJobProxy submitJob(JobConfiguration configuration) {
+    String microcloud = null;
+    if(cloudInfo.size() > 0) {
+      microcloud = cloudInfo.keySet().iterator().next();
+    }else{
+      return null;
+    }
+    return submitJob(configuration, microcloud);
+  }
+
+  @Override public void waitForJobCompletion(String id, String jobID) {
+
   }
 
 

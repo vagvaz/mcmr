@@ -1,6 +1,12 @@
 package gr.tuc.softnet.netty;
 
+import gr.tuc.softnet.core.InjectorUtils;
+import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.core.PrintUtilities;
+import gr.tuc.softnet.engine.JobManager;
+import gr.tuc.softnet.engine.TaskManager;
+import gr.tuc.softnet.kvs.KVSManager;
+import gr.tuc.softnet.netty.messages.MCMessageWrapper;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +21,22 @@ import java.io.ObjectInputStream;
  */
 public class NettyMessageRunnable implements Runnable {
   Logger log = LoggerFactory.getLogger(NettyMessageRunnable.class);
-  NettyMessage nettyMessage;
+  MCMessageWrapper nettyMessage;
   ChannelHandlerContext ctx;
   private int replied = 0;
-
-  public NettyMessageRunnable(ChannelHandlerContext ctx, NettyMessage nettyMessage) {
+  MCDataTransport transport;
+  KVSManager kvsManager;
+  NodeManager nodeManager;
+  JobManager jobManager;
+  TaskManager taskManager;
+  public NettyMessageRunnable(ChannelHandlerContext ctx, MCMessageWrapper nettyMessage) {
     this.ctx = ctx;
     this.nettyMessage = nettyMessage;
+    transport = InjectorUtils.getInjector().getInstance(MCDataTransport.class);
+    kvsManager = InjectorUtils.getInjector().getInstance(KVSManager.class);
+    nodeManager = InjectorUtils.getInjector().getInstance(NodeManager.class);
+    jobManager = InjectorUtils.getInjector().getInstance(JobManager.class);
+    taskManager = InjectorUtils.getInjector().getInstance(TaskManager.class);
   }
 
 //  @Override public void run() {
@@ -57,48 +72,21 @@ public class NettyMessageRunnable implements Runnable {
 //  replyForMessage(ctx, nettyMessage);
 //  }
 @Override public void run() {
-  try{
-    String indexName = nettyMessage.getCacheName();
-    //        byte[] bytes = Snappy.uncompress( nettyMessage.getBytes());
-    //        ByteArrayInputStream byteArray = new ByteArrayInputStream(bytes);
-    //        ObjectInputStream ois = new ObjectInputStream(byteArray);
-    //        Object firstObject = ois.readObject();
-    //        if(firstObject instanceof TupleBuffer){
-    try {
-
-
-      byte[] compressed = nettyMessage.getBytes();//bytes;//new byte[compressedSize];
-      byte[] uncompressed = Snappy.uncompress(compressed);
-      ByteArrayInputStream byteStream = new ByteArrayInputStream(uncompressed);
-      ObjectInputStream inputStream = new ObjectInputStream(byteStream);
-      try{
-        while(true){
-          Object key = inputStream.readObject();
-          Object tuple = inputStream.readObject();
-//TODO          IndexManager.addToIndex(indexName,key, tuple);
-        }
-      }catch (EOFException eof){
-        inputStream.close();
-        byteStream.close();
-      }
-    } catch (Exception e) {
-      PrintUtilities.printAndLog(log,
-          "MessageID " + nettyMessage.getMessageId() + " cache " + nettyMessage.getCacheName() + " bytes lenght" + nettyMessage.getBytes().length);
-      PrintUtilities.printAndLog(log, e.getMessage());
-      PrintUtilities.logStackTrace(log, e.getStackTrace());
-    }
-  } catch (Exception e) {
-    e.printStackTrace();
+  MCMessageHandler handler = MCMessageHandlerFactory.getHandler(nettyMessage.getType());
+  if(handler != null) {
+    handler.process(nettyMessage);
+  }else{
+    log.error("Could not find appropriate handler for " + nettyMessage.getType());
   }
   replyForMessage(ctx, nettyMessage);
 }
 
 
-  private void replyForMessage(ChannelHandlerContext ctx, NettyMessage nettyMessage) {
+  private void replyForMessage(ChannelHandlerContext ctx, MCMessageWrapper nettyMessage) {
     //    ByteBuf buf =  io.netty.buffer.Unpooled.buffer(4);
     //    buf.writeInt(nettyMessage.getMessageId());
     //    ctx.writeAndFlush(buf);
-    AcknowledgeMessage acknowledgeMessage = new AcknowledgeMessage(nettyMessage.getMessageId());
+    AcknowledgeMessage acknowledgeMessage = new AcknowledgeMessage(nettyMessage.getRequestId());
     ctx.writeAndFlush(acknowledgeMessage);
     replied++;
   }
