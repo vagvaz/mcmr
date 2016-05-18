@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Created by vagvaz on 03/03/16.
@@ -238,4 +239,10 @@ public class TaskConfiguration extends HierarchicalConfiguration implements Seri
 
     }
 
+    public Map<String, Serializable> getJobConfiguration() {
+        return (Map<String, Serializable>) getProperty(ConfStringConstants.USER_JOB_CONFIG);
+    }
+    public void setJobConfiguration(Map<String, Serializable> serializableMap){
+        setProperty(ConfStringConstants.USER_JOB_CONFIG,serializableMap);
+    }
 }

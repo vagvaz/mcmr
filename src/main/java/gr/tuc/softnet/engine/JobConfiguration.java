@@ -19,6 +19,7 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
         super();
     }
 
+
     public Class getMapOutputKeyClass() {
         return (Class) getProperty(ConfStringConstants.MAP_OUTPUT_KEY_CLASS);
     }
@@ -144,6 +145,36 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
         return getBoolean(ConfStringConstants.IS_FEDERATION_REDUCE_PIPELINE,false);
     }
 
+    public void setJobProperty(String key, Serializable propertyValue){
+        Map<String,Serializable> configMap =
+          (Map<String, Serializable>) this.getProperty(ConfStringConstants.USER_JOB_CONFIG);
+        if(configMap == null){
+            configMap = new HashMap<>();
+            this.setProperty(ConfStringConstants.USER_JOB_CONFIG,configMap);
+        }
+        configMap.put(key,propertyValue);
+    }
+
+    public Object getJobProperty(String key){
+        Map<String,Serializable> configMap =
+          (Map<String, Serializable>) this.getProperty(ConfStringConstants.USER_JOB_CONFIG);
+        if(configMap == null){
+            configMap = new HashMap<>();
+            this.setProperty(ConfStringConstants.USER_JOB_CONFIG,configMap);
+            return null;
+        }
+        return configMap.get(key);
+    }
+
+    public Map<String,Serializable> getJobProperties(){
+        Map<String,Serializable> configMap =
+          (Map<String, Serializable>) this.getProperty(ConfStringConstants.USER_JOB_CONFIG);
+        if(configMap == null){
+            configMap = new HashMap<>();
+            this.setProperty(ConfStringConstants.USER_JOB_CONFIG,configMap);
+        }
+        return configMap;
+    }
 
     public void setClouds(ArrayList<String> clouds){
         String property = "";

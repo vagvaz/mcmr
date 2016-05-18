@@ -128,6 +128,7 @@ public class MCJobImpl implements MCJob {
     result.setTargetNode(value.getID());
     result.setFederationReducerClass(jobConf.getFederationReducerClass());
     result.setIsBatch(!jobConf.isFederationReducePipeline());
+    result.setJobConfiguration(this.jobConf.getJobProperties());
     return  result;
   }
 
@@ -149,6 +150,7 @@ public class MCJobImpl implements MCJob {
     result.setTargetNode(value.getID());
     result.setLocalReducerClass(jobConf.getLocalReducerClass());
     result.setIsBatch(!jobConf.isLocalReducePipeline());
+    result.setJobConfiguration(this.jobConf.getJobProperties());
     return  result;
   }
 
@@ -171,6 +173,7 @@ public class MCJobImpl implements MCJob {
     result.setTargetNode(value.getID());
     result.setMapperClass(jobConf.getMapperClass());
     result.setIsBatch(!jobConf.isMapPipeline());
+    result.setJobConfiguration(this.jobConf.getJobProperties());
     return result;
   }
 

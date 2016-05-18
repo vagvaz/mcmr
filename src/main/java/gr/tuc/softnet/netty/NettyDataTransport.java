@@ -231,6 +231,14 @@ public class NettyDataTransport implements MCDataTransport {
     return wrapper.getRequestId();
   }
 
+  @Override public void sendRequestResponse(String target, MCMessage message, long requestID){
+    MCMessageWrapper wrapper = new MCMessageWrapper(message, -requestID);
+
+    ChannelFuture future = nodes.get(target);
+    pending.get(future.channel()).add(wrapper.getRequestId());
+    future.channel().write(wrapper);
+  }
+
   private  void updateHistogram(String target, byte[] bytes) {
     Long tmp = histogram.get(target);
     tmp += bytes.length;

@@ -11,7 +11,7 @@ public abstract class MCMessage {
 
   String messageType;
   public MCMessage(String messageType){
-    messageType = messageType;
+    this.messageType = messageType;
   }
   public String getMessageType() {
     return messageType;

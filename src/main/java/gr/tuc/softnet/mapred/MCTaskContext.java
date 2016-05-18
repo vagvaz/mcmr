@@ -14,7 +14,9 @@ import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.security.Credentials;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Created by vagvaz on 10/03/16.
@@ -30,6 +32,10 @@ public class MCTaskContext<KEYIN extends WritableComparable, VALUEIN extends Wri
         this.configuration = configuration;
         status = new TaskStatus(configuration);
         hadoopConfiguration = new Configuration();
+        Map<String,Serializable> config = configuration.getJobConfiguration();
+        for(Map.Entry<String,Serializable> entry : config.entrySet()){
+            hadoopConfiguration.set(entry.getKey(),entry.getValue().toString());
+        }
         output = kvsManager.getKVSProxy(configuration.getOutput());
         input = kvsManager.getKVS(configuration.getInput());
     }

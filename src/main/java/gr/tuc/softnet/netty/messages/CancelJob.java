@@ -7,8 +7,10 @@ import gr.tuc.softnet.core.StringConstants;
  */
 public class CancelJob extends MCMessage {
   public static final String TYPE = StringConstants.CANCEL_JOB;
-  public CancelJob(String messageType) {
+  String id;
+  public CancelJob(String id) {
     super(TYPE);
+    this.id = id;
   }
 
   @Override public byte[] toBytes() {

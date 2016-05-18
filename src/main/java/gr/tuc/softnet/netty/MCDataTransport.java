@@ -35,6 +35,8 @@ public interface MCDataTransport  {
 
     long sendRequest(String target, MCMessage message);
 
+    void sendRequestResponse(String target, MCMessage message, long requestID);
+
     MCConfiguration getGlobalConfig();
 
     void spillMetricData();
