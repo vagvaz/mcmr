@@ -8,10 +8,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import rx.Subscriber;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 
 /**
  * Created by vagvaz on 16/02/16.
@@ -32,8 +29,9 @@ public class KVSProxy<K extends WritableComparable,V extends Writable> implement
 
     }
 
-    public void initialize(String name , MCPartitioner partitioner){
+    public void initialize(String name , MCPartitioner partitioner,KVSConfiguration kvsConfiguration){
         this.name = name;
+        nodeNames = new LinkedList<>();
         for(String node : dataTransport.getNodes().keySet()){
             nodeNames.add(node);
         }
@@ -41,7 +39,7 @@ public class KVSProxy<K extends WritableComparable,V extends Writable> implement
         if(nodeNames != null) {
             for (int i = 0; i < nodeNames.size(); i++) {
                 dataBuffers.put(i,
-                  new MCDataBufferImpl(kvsManager.getKVSConfiguration(name), dataTransport,
+                  new MCDataBufferImpl(kvsConfiguration, dataTransport,
                     nodeNames.get(i), dataTransport.getConfiguration()));
             }
         }

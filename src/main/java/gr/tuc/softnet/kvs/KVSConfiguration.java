@@ -7,7 +7,7 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Created by vagvaz on 22/02/16.
@@ -96,20 +96,20 @@ public class KVSConfiguration extends HierarchicalConfiguration implements Seria
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         Iterator<String> iterator =  this.getKeys();
-        int counter = this.getRootNode().getChildren().size();
-        out.writeInt(counter);
+        int counter = 0;
+        this.getRootNode().getChildren().size();
+
+        List<Map.Entry<String,Serializable>> list = new LinkedList<>();
         while(iterator.hasNext()){
-            if(counter-- < 0)
-            {
-                try {
-                    throw new Exception("counter neg");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+
             String key = iterator.next();
-            out.writeObject(key);
-            out.writeObject(this.getProperty(key));
+            list.add(new AbstractMap.SimpleEntry<String, Serializable>(key,
+              (Serializable) this.getProperty(key)));
+        }
+        out.writeInt(list.size());
+        for(Map.Entry<String,Serializable> entry : list){
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
         }
 
     }

@@ -33,8 +33,10 @@ public class MCTaskContext<KEYIN extends WritableComparable, VALUEIN extends Wri
         status = new TaskStatus(configuration);
         hadoopConfiguration = new Configuration();
         Map<String,Serializable> config = configuration.getJobConfiguration();
-        for(Map.Entry<String,Serializable> entry : config.entrySet()){
-            hadoopConfiguration.set(entry.getKey(),entry.getValue().toString());
+        if(config != null) {
+            for (Map.Entry<String, Serializable> entry : config.entrySet()) {
+                hadoopConfiguration.set(entry.getKey(), entry.getValue().toString());
+            }
         }
         output = kvsManager.getKVSProxy(configuration.getOutput());
         input = kvsManager.getKVS(configuration.getInput());
