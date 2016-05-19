@@ -26,7 +26,7 @@ public class KVSProxy<K extends WritableComparable,V extends Writable> implement
     SortedMap<Integer,MCDataBuffer> dataBuffers;
 
     public KVSProxy() {
-
+        nodeNames = new ArrayList<>();
     }
 
     public void initialize(String name , MCPartitioner partitioner,KVSConfiguration kvsConfiguration){
