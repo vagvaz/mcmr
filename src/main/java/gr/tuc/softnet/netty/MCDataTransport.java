@@ -61,7 +61,7 @@ public interface MCDataTransport  {
 
     void startTask(TaskConfiguration task);
 
-    boolean cancelJob(String id, String nodes, List<String> jobID);
+    boolean cancelJob(String node, String jobID, List<String> nodes);
 
     JobStatus getJobStatus(String id, String jobID);
 

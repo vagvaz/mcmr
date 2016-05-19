@@ -16,6 +16,7 @@ import rx.Observable;
 import rx.Subscriber;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -84,7 +85,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         MCJob job = jobInfo.get(jobID);
         if(job == null){
             logger.error("Job: " + jobID + " is not handled bu this JobManager");
-            return dataTransport.cancelJob(coordinator.getID(), nodes,jobID);
+            return dataTransport.cancelJob(jobID, jobID,new LinkedList<>());
         }
         else{
             cancelJob(jobID);
@@ -121,7 +122,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     public JobStatus getJobStatus(String jobID) {
         MCJob job = jobInfo.get(jobID);
         if(job == null){
-            return dataTransport.getJobStatus(coordinator.getID(), jobID);
+            return dataTransport.getJobStatus(job.getJobConfiguration().getJobID(), jobID);
         }else{
             return job.getStatus();
         }

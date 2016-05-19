@@ -367,7 +367,7 @@ public class NettyDataTransport implements MCDataTransport {
 
   }
 
-  @Override public boolean cancelJob(String id, String nodes, List<String> jobID) {
+  @Override public boolean cancelJob(String node, String jobID, List<String> nodes) {
     return false;
   }
 
