@@ -12,7 +12,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import examplestests.DataLoader;
+import gr.tuc.softnet.mapred.examples.DataLoader;
 import gr.tuc.softnet.core.InjectorUtils;
 import gr.tuc.softnet.core.MCNodeModule;
 import gr.tuc.softnet.core.NodeManager;

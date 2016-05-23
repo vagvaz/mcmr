@@ -1,6 +1,5 @@
-package examplestests;
+package gr.tuc.softnet.mapred.examples;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import org.apache.hadoop.io.Writable;
@@ -8,8 +7,6 @@ import org.apache.hadoop.io.WritableComparable;
 
 import java.util.Map;
 
-import gr.tuc.softnet.core.InjectorUtils;
-import gr.tuc.softnet.core.MCNodeModule;
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.kvs.KVSConfiguration;
@@ -20,6 +17,7 @@ import gr.tuc.softnet.kvs.KeyValueStore;
  * Created by ap0n on 19/5/2016.
  */
 public class DataLoader<K extends WritableComparable, V extends Writable> {
+
   private String kvsName;
   private KeyValueStore<K, V> kvs;
   private KVSConfiguration kvsConfiguration;
@@ -27,17 +25,13 @@ public class DataLoader<K extends WritableComparable, V extends Writable> {
   private Class<K> keyClass;
   private Class<V> valueClass;
 
-  public DataLoader(String kvsName, NodeManager nodeManager, Injector injector, Class<K> keyClass, Class<V> valueClass) {
+  public DataLoader(String kvsName, NodeManager nodeManager, Injector injector, Class<K> keyClass,
+                    Class<V> valueClass) {
     this.kvsName = kvsName;
     this.kvsConfiguration = new KVSConfiguration();
     this.keyClass = keyClass;
     this.valueClass = valueClass;
     this.nodeManager = nodeManager;
-
-//    Injector injector = Guice.createInjector(new MCNodeModule());
-//    InjectorUtils.setInjector(injector);
-//    nodeManager = injector.getInstance(NodeManager.class);
-//    nodeManager.initialize(StringConstants.DEFAULT_CONF_DIR);  // TODO: Is the argument ok?
 
     KVSManager kvsManager = injector.getInstance(KVSManager.class);
 

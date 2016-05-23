@@ -11,10 +11,11 @@ import gr.tuc.softnet.mapred.MCMapper;
 /**
  * Created by vagvaz on 01/04/16.
  */
-public class WordCountMapper extends MCMapper<Text, Text, Text, IntWritable> {
+public class WordCountMapper extends MCMapper<IntWritable, Text, Text, IntWritable> {
 
   @Override
-  protected void map(Text key, Text value, Mapper<Text, Text, Text, IntWritable>.Context context)
+  protected void map(IntWritable key, Text value,
+                     Mapper<IntWritable, Text, Text, IntWritable>.Context context)
       throws IOException, InterruptedException {
 
     System.out.println("key " + key.toString() + " value " + value.toString());
