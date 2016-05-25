@@ -1,13 +1,19 @@
 package gr.tuc.softnet.mapred.examples.kmeans;
 
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
+import gr.tuc.softnet.core.InjectorUtils;
+import gr.tuc.softnet.kvs.KVSManager;
+import gr.tuc.softnet.kvs.KVSProxy;
 import gr.tuc.softnet.mapred.MCMapper;
 
 /**
@@ -28,11 +34,25 @@ public class KMeansMapper extends MCMapper<Text, Document, IntWritable, Document
     centroids = new Document[k];
     norms = new Double[k];
 
+    KVSManager kvsManager = InjectorUtils.getInjector().getInstance(KVSManager.class);
+
     for (int i = 0; i < k; i++) {
+      // Get the norm
       norms[i] = con.getConfiguration().getDouble("norm" + String.valueOf(i), .0);
-      // TODO(ap0n): How do we get the centroids (Document[]) from the config?
-//      Map<Text, DoubleWritable> map = new HashMap<>();
-//      Text centroid = new Text(con.getConfiguration().get("centroid" + String.valueOf(i)));
+
+      // Load the centroid
+      centroids[i] = new Document();
+      centroids[i].setIndex(i);
+      // Get the KVS for the centroid i
+      String kvsName = con.getConfiguration().get("centroidsKvsNamePrefix") + String.valueOf(i);
+      KVSProxy<Text, DoubleWritable> centroidKvs = kvsManager.getKVSProxy(kvsName);
+      // Iterate over it
+      Iterator<Map.Entry<Text, DoubleWritable>> iter = centroidKvs.iterator().iterator();
+      while (iter.hasNext()) {
+        Map.Entry<Text, DoubleWritable> e = iter.next();
+        // get its dimensions
+        centroids[i].putDimention(e.getKey().toString(), e.getValue().get());
+      }
     }
   }
 

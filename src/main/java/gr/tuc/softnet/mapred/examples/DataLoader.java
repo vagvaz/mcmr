@@ -5,7 +5,10 @@ import com.google.inject.Injector;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Vector;
 
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.core.StringConstants;
@@ -16,8 +19,10 @@ import gr.tuc.softnet.kvs.KeyValueStore;
 /**
  * Created by ap0n on 19/5/2016.
  */
-public class DataLoader<K extends WritableComparable, V extends Writable> {
+public abstract class DataLoader<K extends WritableComparable, V extends Writable>
+    implements Runnable {
 
+  protected Vector<File> filesToLoad;
   private String kvsName;
   private KeyValueStore<K, V> kvs;
   private KVSConfiguration kvsConfiguration;
@@ -52,4 +57,23 @@ public class DataLoader<K extends WritableComparable, V extends Writable> {
       load(e.getKey(), e.getValue());
     }
   }
+
+  @Override
+  public void run() {
+    File f;
+    for (; ; ) {
+      try {
+        // Read each file and load its data
+        f = filesToLoad.remove(0);
+        load(parseData(f));
+      } catch (Exception e) {
+        if (e instanceof ArrayIndexOutOfBoundsException) {
+          break;
+        }
+        e.printStackTrace();
+      }
+    }
+  }
+
+  public abstract Map<K, V> parseData(File f) throws IOException;
 }

@@ -28,30 +28,30 @@ public class TestDataLoader extends TestCase {
   private NodeManager nodeManager;
   private Injector injector;
 
-  @Test
-  public void testDataLoader() {
-
-    injector = Guice.createInjector(new MCNodeModule());
-    InjectorUtils.setInjector(injector);
-    nodeManager = injector.getInstance(NodeManager.class);
-    nodeManager.initialize(StringConstants.DEFAULT_CONF_DIR);  // TODO: Is the argument ok?
-
-    int dataCount = 1000;
-    String kvsName = "testDataInput";
-    Map<IntWritable, IntWritable> data = generateData(dataCount);
-    DataLoader<IntWritable, IntWritable> dataLoader = new DataLoader<>(kvsName,
-                                                                       nodeManager,
-                                                                       injector,
-                                                                       IntWritable.class,
-                                                                       IntWritable.class);
-    try {
-      dataLoader.load(data);
-    } catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail();
-    }
-    validateKvsData(data, kvsName);
-  }
+//  @Test
+//  public void testDataLoader() { Obsolete test
+//
+//    injector = Guice.createInjector(new MCNodeModule());
+//    InjectorUtils.setInjector(injector);
+//    nodeManager = injector.getInstance(NodeManager.class);
+//    nodeManager.initialize(StringConstants.DEFAULT_CONF_DIR);
+//
+//    int dataCount = 1000;
+//    String kvsName = "testDataInput";
+//    Map<IntWritable, IntWritable> data = generateData(dataCount);
+//    DataLoader<IntWritable, IntWritable> dataLoader = new DataLoader<>(kvsName,
+//                                                                       nodeManager,
+//                                                                       injector,
+//                                                                       IntWritable.class,
+//                                                                       IntWritable.class);
+//    try {
+//      dataLoader.load(data);
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//      Assert.fail();
+//    }
+//    validateKvsData(data, kvsName);
+//  }
 
   private Map<IntWritable, IntWritable> generateData(int count) {
     Map<IntWritable, IntWritable> data = new HashMap<>();

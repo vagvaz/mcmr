@@ -1,9 +1,8 @@
-package gr.tuc.softnet.mapred.examples.wordcount;
+package gr.tuc.softnet.mapred.examples.countmin;
 
 import com.google.inject.Injector;
 
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import gr.tuc.softnet.mapred.examples.LineDataLoader;
 /**
  * Created by ap0n on 23/5/2016.
  */
-public class WordCountSubmitter {
+public class CountMinSubmitter {
 
   /**
    * Submits the job but assumes the data is already loaded
@@ -35,28 +34,33 @@ public class WordCountSubmitter {
                                   boolean isFederationReducePipeline,
                                   String input,
                                   String output,
-                                  ArrayList<String> clouds) {
+                                  ArrayList<String> clouds,
+                                  int w,
+                                  int d) {
     JobConfiguration c = new JobConfiguration();
 
-    c.setMapperClass(WordCountMapper.class);
-    c.setMapOutputKeyClass(Text.class);
+    c.setMapperClass(CountMinMapper.class);
+    c.setMapOutputKeyClass(Sketch.class);
     c.setMapOutputValueClass(IntWritable.class);
     c.setIsMapPipeline(isMapPipeline);
 
-    c.setCombinerClass(WordCountReducer.class);
+    c.setCombinerClass(CountMinCombiner.class);
 
-    c.setLocalReduceOutputKeyClass(Text.class);
-    c.setLocalReduceOutputValueClass(IntWritable.class);
+    c.setLocalReduceOutputKeyClass(IntWritable.class);
+    c.setLocalReduceOutputValueClass(Sketch.class);
     c.setIsLocalReducePipeline(isLocalReducePipeline);
 
-    c.setFederationReduceOutputKeyClass(Text.class);
-    c.setFederationReduceOutputValueClass(Text.class);
+    c.setFederationReduceOutputKeyClass(IntWritable.class);
+    c.setFederationReduceOutputValueClass(Sketch.class);
     c.setIsFederationReducePipeline(isFederationReducePipeline);
 
     c.setClouds(clouds);
 
     c.setInput(input);
     c.setOutput(output);
+
+    c.setJobProperty("w", w);
+    c.setJobProperty("d", d);
 
     return JobSubmitter.submitJob(c);
   }
@@ -84,7 +88,9 @@ public class WordCountSubmitter {
                                   String inputFiles,
                                   int threadPoolSize,
                                   NodeManager nodeManager,
-                                  Injector injector) {
+                                  Injector injector,
+                                  int w,
+                                  int d) {
 
     File datasetDirectory = new File(inputFiles);
     File[] allFiles = datasetDirectory.listFiles();
@@ -101,7 +107,7 @@ public class WordCountSubmitter {
       // Create the threads and pass 'files' to all of them
       threads.add(new Thread(new LineDataLoader(input, nodeManager, injector, files)));
     }
-    System.out.println("Loading data to '" + input + "' KVS\n");
+    System.out.println("Loading lines to '" + input + "' KVS\n");
 
     threads.forEach(Thread::start);
 
@@ -114,10 +120,6 @@ public class WordCountSubmitter {
     }
 
     return submit(isMapPipeline, isLocalReducePipeline, isFederationReducePipeline, input, output,
-                  clouds);
-  }
-
-  public static void main(String[] args) {
-    // Submit the job here.
+                  clouds, w, d);
   }
 }

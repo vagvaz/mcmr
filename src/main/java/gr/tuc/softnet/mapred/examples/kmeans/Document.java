@@ -71,6 +71,10 @@ public class Document implements Writable, Serializable {
     }
   }
 
+  public void putDimention(String key, Double value) {
+    dimensions.put(key, value);
+  }
+
   public int getIndex() {
     return index;
   }
