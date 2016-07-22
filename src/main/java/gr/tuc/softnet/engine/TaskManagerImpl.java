@@ -1,6 +1,7 @@
 package gr.tuc.softnet.engine;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.netty.MCDataTransport;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by vagvaz on 03/03/16.
  */
+@Singleton
 public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
     Map<String, MCTask> taskInfo;
     @Inject

@@ -1,5 +1,7 @@
 package gr.tuc.softnet.netty;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import gr.tuc.softnet.core.MCConfiguration;
@@ -12,10 +14,7 @@ import gr.tuc.softnet.kvs.KeyValueStore;
 import gr.tuc.softnet.netty.messages.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -43,42 +42,41 @@ import java.util.concurrent.atomic.AtomicLong;
  * http://netty.io/4.1/xref/io/netty/example/udt/echo/bytes/package-summary.html
  * Created by vagvaz on 10/21/15.
  */
-@Singleton
-public class NettyDataTransport implements MCDataTransport {
-  @Inject 
-  MCConfiguration globalConfiguration;
-  @Inject
-  KVSManager kvsManager;
-  @Inject
-  JobManager jobManager;
-  @Inject
-  TaskManager taskManager;
-   EventLoopGroup workerGroup;
-   EventLoopGroup bossGroup;
-   Bootstrap clientBootstrap;
-   ServerBootstrap serverBootstrap;
-   Set<ChannelFuture> channelFutures;
-   Map<String,ChannelFuture> nodes;
-   String me;
-   Map<Channel,Set<Long>> pending;
-  private  NettyClientChannelInitializer clientChannelInitializer;
-  private  NettyServerChannelInitializer serverChannelInitializer;
-  private  ChannelFuture serverFuture;
-  private  AtomicInteger counter = new AtomicInteger(0);
-  private  Map<String,Long> histogram;
-  private  Logger log = LoggerFactory.getLogger(NettyDataTransport.class);
-  private  boolean nodesInitialized = false;
-  private  boolean discard = false;
+@Singleton public class NettyDataTransport implements MCDataTransport {
+  @Inject MCConfiguration globalConfiguration;
+  @Inject KVSManager kvsManager;
+  @Inject JobManager jobManager;
+  @Inject TaskManager taskManager;
+  EventLoopGroup workerGroup;
+  EventLoopGroup bossGroup;
+  Bootstrap clientBootstrap;
+  ServerBootstrap serverBootstrap;
+  Set<ChannelFuture> channelFutures;
+  Map<String, ChannelFuture> nodes;
+  String me;
+  Map<Channel, Set<Long>> pending;
+  private NettyClientChannelInitializer clientChannelInitializer;
+  private NettyServerChannelInitializer serverChannelInitializer;
+  private ChannelFuture serverFuture;
+  private AtomicInteger counter = new AtomicInteger(0);
+  private Map<String, Long> histogram;
+  private Logger log = LoggerFactory.getLogger(NettyDataTransport.class);
+  private boolean nodesInitialized = false;
+  private boolean discard = false;
   private AtomicLong requestID = new AtomicLong(0);
-  private Map<Long,MCMessage> requests;
-  private Map<Long,Object> mutexes;
-  private Map<String, Map<String, NodeStatus>> cloudInfo;
+  private Map<Long, MCMessage> requests;
+  private volatile Map<Long, Object> mutexes;
+  private SortedMap<String, SortedMap<String, NodeStatus>> cloudInfo;
+  private Map<Channel, String> clientMap;
+  private EventBus eventBus;
+  private NodeStatus mineNodeStatus;
 
-
-  @Override
-  public  void initialize() {
-//    NettyDataTransport.globalConfiguration = globalConfiguration;
-    discard =globalConfiguration .conf().getBoolean("transfer.discard",false);
+  @Override public void initialize() {
+    //    NettyDataTransport.globalConfiguration = globalConfiguration;
+    clientMap = new HashedMap();
+    eventBus = new EventBus(getConfiguration().getNodeName());
+    eventBus.register(this);
+    discard = globalConfiguration.conf().getBoolean("transfer.discard", false);
     clientChannelInitializer = new NettyClientChannelInitializer();
     serverChannelInitializer = new NettyServerChannelInitializer();
     pending = new HashMap<>();
@@ -91,70 +89,107 @@ public class NettyDataTransport implements MCDataTransport {
     workerGroup = new NioEventLoopGroup();
     bossGroup = new NioEventLoopGroup();
     clientBootstrap.group(workerGroup);
-//    clientBootstrap.group(workerGroup);
+    //    clientBootstrap.group(workerGroup);
     clientBootstrap.channel(NioSocketChannel.class);
-    clientBootstrap.option(ChannelOption.SO_KEEPALIVE,true).handler(clientChannelInitializer);
-    serverBootstrap.group(bossGroup,workerGroup).channel(NioServerSocketChannel.class)
-        .option(ChannelOption.SO_BACKLOG,128)
-        .option(ChannelOption.SO_REUSEADDR,true)
-        .childOption(ChannelOption.SO_KEEPALIVE,true)
-        //        .childOption(ChannelOption.SO_RCVBUF,2*1024*1024)
-        .childHandler(serverChannelInitializer);
+    clientBootstrap.option(ChannelOption.SO_KEEPALIVE, true).handler(clientChannelInitializer);
+    serverBootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+      .option(ChannelOption.SO_BACKLOG, 128).option(ChannelOption.SO_REUSEADDR, true)
+      .childOption(ChannelOption.SO_KEEPALIVE, true)
+      //        .childOption(ChannelOption.SO_RCVBUF,2*1024*1024)
+      .childHandler(serverChannelInitializer);
+    cloudInfo = new TreeMap<>();
+    HierarchicalConfiguration conf =
+      (HierarchicalConfiguration) globalConfiguration.getConfigurations()
+        .get("conf/conf/processor.xml");
+    List<HierarchicalConfiguration> mcs = conf.configurationsAt("network.mc");
+    for (HierarchicalConfiguration c : mcs) {
+      SortedMap<String, NodeStatus> newCloud = new TreeMap<>();
+      String cloud = c.getString("name");
+      cloudInfo.put(cloud, newCloud);
+      List<Object> nodes = c.getList("node");
+      for (Object node : nodes) {
+        NodeStatus status = new NodeStatus((String) node, cloud);
+        newCloud.put(status.getID(), status);
+        this.nodes.put(status.getNodeID(), null);
+      }
+    }
+
     try {
-      serverFuture = serverBootstrap.bind(getPort()).sync();
+      String ip = getIP();
+      int port = getPort();
+      if (!ip.equals("")) {
+        serverFuture = serverBootstrap.bind(ip, port).sync();
+        mineNodeStatus = new NodeStatus(ip + ":" + port, getConfiguration().getMicroClusterName());
+        me = mineNodeStatus.getNodeID();
+      } else {
+        me = "";
+        mineNodeStatus = null;
+      }
+      initializeNodes();
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    initializeNodes();
   }
 
-  @Override
-  public synchronized  void initializeNodes(){
-    if(nodesInitialized){
-      return;
-    }
-    cloudInfo = new HashedMap();
-    HierarchicalConfiguration conf =
-      (HierarchicalConfiguration) globalConfiguration.getConfigurations().get("conf/conf/processor.xml");
-    List<HierarchicalConfiguration> mcs = conf.configurationsAt("network.mc");
-    for(HierarchicalConfiguration c : mcs){
-      Map<String,NodeStatus> newCloud = new HashedMap();
-      String cloud = c.getString("name");
-      cloudInfo.put(cloud,newCloud);
-      List<Object> nodes = c.getList("node");
-      for(Object node : nodes){
-        NodeStatus status = new NodeStatus((String) node,cloud);
-        newCloud.put(status.getID(),status);
-        boolean ok = false;
-        while(!ok){
-          try {
-            ChannelFuture f = clientBootstrap.connect(status.getIP(),status.getPort()).sync();
+    @Override public synchronized void initializeNodes () {
+      if (nodesInitialized) {
+        return;
+      }
+      for (String cloud : cloudInfo.keySet()) {
+        for (NodeStatus status : cloudInfo.get(cloud).values()) {
 
-            ok = true;
-            this.nodes.put(status.getIP(),f);
-            pending.put(f.channel(),new HashSet<Long>(100));
-            channelFutures.add(f);
-            histogram.put(status.getIP(),0L);
-          } catch (Exception e) {
-            e.printStackTrace();
+
+          boolean ok = false;
+          while (!ok) {
+            try {
+              ChannelFuture f = clientBootstrap.connect(status.getIP(), status.getPort()).sync();
+
+              ok = true;
+              this.nodes.put(status.getNodeID(), f);
+
+              pending.put(f.channel(), new HashSet<Long>(100));
+              channelFutures.add(f);
+              histogram.put(status.getNodeID(), 0L);
+              if (nodes.containsKey(me)) {
+                sendAnnouncement(status.getNodeID());
+              }
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
           }
         }
       }
+
+      nodesInitialized = true;
     }
-    nodesInitialized=true;
+
+  private void sendAnnouncement(String nodeID) {
+    NodeAnnouncementMessage message = new NodeAnnouncementMessage(me);
+    sendAndFlush(nodeID, message);
   }
 
-  private  int getPort(String portString) {
+  private int getPort(String portString) {
     Integer result = Integer.parseInt(portString);
-    return 10000+(result - 11222);
+    return 10000 + (result - 11222);
   }
 
-  private  int getPort() {
-    int result = 10000;
-//    ClusterInfinispanManager clusterInfinispanManager =
-//        (ClusterInfinispanManager) InfinispanClusterSingleton.getInstance().getManager();
-//    result += clusterInfinispanManager.getServerPort()-11222;
+  private int getPort() {
+    Integer result = 10000;
+    //    ClusterInfinispanManager clusterInfinispanManager =
+    //        (ClusterInfinispanManager) InfinispanClusterSingleton.getInstance().getManager();
+    //    result += clusterInfinispanManager.getServerPort()-11222;
     result = globalConfiguration.conf().getInt("node.port");
+    if (result == null) {
+      result = -1;
+    }
+    return result;
+  }
+
+  private String getIP() {
+    String result = globalConfiguration.conf().getString("node.public_ip");
+    if (result == null) {
+      result = "";
+    }
     return result;
   }
 
@@ -175,49 +210,75 @@ public class NettyDataTransport implements MCDataTransport {
    * @param key
    * @param value
    */
-  @Override
-  public  void send(Channel channel, String indexName, Object key, Object value) {
+  @Override public void send(Channel channel, String indexName, Object key, Object value) {
     //DEPRECATED
-    send(channel.remoteAddress().toString(),indexName,key,value);
+    send(channel.remoteAddress().toString(), indexName, key, value);
   }
 
-  @Override
-  public  void send(String name, String indexName, Object key, Object value) {
-    Serializable keySerializable = (Serializable)key;
-    Serializable valueSerializable = (Serializable)value;
+  @Override public void send(String name, String indexName, Object key, Object value) {
+    Serializable keySerializable = (Serializable) key;
+    Serializable valueSerializable = (Serializable) value;
     try {
       ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
       ObjectOutputStream oos = new ObjectOutputStream(byteArray);
       oos.writeObject(key);
       oos.writeObject(value);
-      send(name,indexName,byteArray.toByteArray());
+      send(name, indexName, byteArray.toByteArray());
     } catch (IOException e) {
       e.printStackTrace();
     }
 
   }
 
+  @Override public void flush() {
+    for (ChannelFuture future : nodes.values()) {
+      future.channel().flush();
+    }
+  }
 
-  @Override
-  public  void send(String target, String cacheName, byte[] bytes) {
-//    NettyMessage nettyMessage = new NettyMessage(cacheName,bytes,getCounter());
-//    ChannelFuture f = nodes.get(target);
-//    if(!discard) {
-//      pending.get(f.channel()).add(nettyMessage.getMessageId());
-//
-//      updateHistogram(target, bytes);
-//
-//      f.channel().write(nettyMessage, f.channel().voidPromise());
-//    }
+  @Override public void send(String target, String cacheName, byte[] bytes) {
+    //    NettyMessage nettyMessage = new NettyMessage(cacheName,bytes,getCounter());
+    //    ChannelFuture f = nodes.get(target);
+    //    if(!discard) {
+    //      pending.get(f.channel()).add(nettyMessage.getMessageId());
+    //
+    //      updateHistogram(target, bytes);
+    //
+    //      f.channel().write(nettyMessage, f.channel().voidPromise());
+    //    }
   }
 
   @Override public void send(String target, MCMessage message) {
-    MCMessageWrapper wrapper = new MCMessageWrapper(message,getRequestID());
+    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
     ChannelFuture f = nodes.get(target);
     {
       pending.get(f.channel()).add(wrapper.getRequestId());
-      updateHistogram(target,wrapper.bytesSize());
-      f.channel().write(wrapper,f.channel().voidPromise());
+      updateHistogram(target, wrapper.bytesSize());
+      f.channel().write(wrapper, f.channel().voidPromise());
+    }
+  }
+
+  public void sendAndFlush(String target, MCMessage message) {
+    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
+    ChannelFuture f = nodes.get(target);
+    {
+      pending.get(f.channel()).add(wrapper.getRequestId());
+      updateHistogram(target, wrapper.bytesSize());
+      f.channel().write(wrapper, f.channel().voidPromise());
+      f.channel().flush();
+    }
+  }
+
+  @Subscribe public void setRequestResponse(RequestResponseEvent event) {
+    long requestID = event.getRequestID();
+    MCMessage message = event.getMessage();
+    String node = event.getNode();
+    Object mutex = mutexes.containsKey(requestID);
+    if (mutex != null) {
+      requests.put(requestID, message);
+      mutex.notify();
+    } else {
+      log.error("Received redudant request response " + requestID + " from " + node);
     }
   }
 
@@ -226,26 +287,28 @@ public class NettyDataTransport implements MCDataTransport {
 
     ChannelFuture future = nodes.get(target);
     pending.get(future.channel()).add(wrapper.getRequestId());
-    mutexes.put(wrapper.getRequestId(),new Object());
+    mutexes.put(wrapper.getRequestId(), new Object());
     future.channel().write(wrapper);
+    future.channel().flush();
     return wrapper.getRequestId();
   }
 
-  @Override public void sendRequestResponse(String target, MCMessage message, long requestID){
+  @Override public void sendRequestResponse(String target, MCMessage message, long requestID) {
     MCMessageWrapper wrapper = new MCMessageWrapper(message, -requestID);
 
     ChannelFuture future = nodes.get(target);
     pending.get(future.channel()).add(wrapper.getRequestId());
     future.channel().write(wrapper);
+    future.channel().flush();
   }
 
-  private  void updateHistogram(String target, byte[] bytes) {
+  private void updateHistogram(String target, byte[] bytes) {
     Long tmp = histogram.get(target);
     tmp += bytes.length;
-    histogram.put(target,tmp);
+    histogram.put(target, tmp);
   }
 
-  private   int getCounter() {
+  private int getCounter() {
     //    counter = (counter+1) % Integer.MAX_VALUE;
     //    return counter;
     return counter.addAndGet(1);
@@ -255,33 +318,30 @@ public class NettyDataTransport implements MCDataTransport {
    * We might use this method to get all the necessary configuration we might need for initializing NettyKeyValueDataTransfer
    */
 
-  @Override
-  public MCConfiguration getGlobalConfig() {
+  @Override public MCConfiguration getGlobalConfig() {
     return globalConfiguration;
   }
 
 
 
-
-  @Override
-  public  void spillMetricData() {
-    for(Map.Entry<String,Long> entry : histogram.entrySet()){
-      PrintUtilities.printAndLog(log,"SPILL: " + entry.getKey() + " " + entry.getValue());
+  @Override public void spillMetricData() {
+    for (Map.Entry<String, Long> entry : histogram.entrySet()) {
+      PrintUtilities.printAndLog(log, "SPILL: " + entry.getKey() + " " + entry.getValue());
     }
   }
 
-  @Override
-  public  void waitEverything() {
-    for(Map.Entry<String,ChannelFuture> entry: nodes.entrySet()){
+  @Override public void waitEverything() {
+    for (Map.Entry<String, ChannelFuture> entry : nodes.entrySet()) {
       entry.getValue().channel().flush();
     }
-    for(Map.Entry<Channel,Set<Long>> entry : pending.entrySet()){
+    for (Map.Entry<Channel, Set<Long>> entry : pending.entrySet()) {
       entry.getKey().flush();
-      while(entry.getValue().size() > 0 ){
+      while (entry.getValue().size() > 0) {
         try {
-          PrintUtilities.printAndLog(log,"Waiting " + entry.getKey().remoteAddress() + " " + entry.getValue().size());
+          PrintUtilities.printAndLog(log,
+            "Waiting " + entry.getKey().remoteAddress() + " " + entry.getValue().size());
           //          PrintUtilities.printList(entry.getValue());
-          Thread.sleep(Math.min(Math.max(entry.getValue().size()*100,500),50000));
+          Thread.sleep(Math.min(Math.max(entry.getValue().size() * 100, 500), 50000));
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
@@ -289,20 +349,18 @@ public class NettyDataTransport implements MCDataTransport {
     }
   }
 
-  @Override
-  public  void acknowledge(Channel owner, long ackMessageId) {
+  @Override public void acknowledge(Channel owner, long ackMessageId) {
     pending.get(owner).remove(ackMessageId);
   }
 
-  @Override
-  public  Map<String, ChannelFuture> getNodes() {
+  @Override public Map<String, ChannelFuture> getNodes() {
     return nodes;
   }
 
   @Override public <K extends WritableComparable, V extends Writable> V remoteGet(String kvsName,
     String nodeName, K key) {
-    KVSGet<K> message = new KVSGet<>(kvsName,key, (Class<K>) key.getClass());
-    long requestID = sendRequest(nodeName,message);
+    KVSGet<K> message = new KVSGet<>(kvsName, key, (Class<K>) key.getClass());
+    long requestID = sendRequest(nodeName, message);
     MCMessage response = getRequestResult(requestID);
     KVSGetResponse getResponse = (KVSGetResponse) response;
     return (V) getResponse.getValue();
@@ -310,7 +368,7 @@ public class NettyDataTransport implements MCDataTransport {
 
   private MCMessage getRequestResult(long requestID) {
     MCMessage response = requests.get(requestID);
-    if(response == null){
+    if (response == null) {
       waitForResult(requestID);
     }
     return requests.get(response);
@@ -318,8 +376,8 @@ public class NettyDataTransport implements MCDataTransport {
 
   private void waitForResult(long requestID) {
     Object mutex = mutexes.get(requestID);
-    synchronized (mutex){
-      while(!requests.containsKey(requestID)) {
+    synchronized (mutex) {
+      while (!requests.containsKey(requestID)) {
         try {
           mutex.wait(1000);
         } catch (InterruptedException e) {
@@ -330,23 +388,19 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
 
-  @Override
-  public int remoteSize(String name, String node)
-  {
+  @Override public int remoteSize(String name, String node) {
     return 0;
   }
 
   @Override
-  public <K extends WritableComparable> boolean remoteContains(String node, String kvsName, K key)
-  {
-    KVSContains message = new KVSContains(kvsName,key,key.getClass());
-    long responseID = sendRequest(node,message);
+  public <K extends WritableComparable> boolean remoteContains(String node, String kvsName, K key) {
+    KVSContains message = new KVSContains(kvsName, key, key.getClass());
+    long responseID = sendRequest(node, message);
     waitForResult(responseID);
     return false;
   }
 
-  @Override
-  public void cancelTask(String id, String taskID) {
+  @Override public void cancelTask(String id, String taskID) {
 
   }
 
@@ -354,13 +408,36 @@ public class NettyDataTransport implements MCDataTransport {
     return this.globalConfiguration;
   }
 
-  @Override public void createKVS(String name, KVSConfiguration kvsConfiguration) {
-      for(String node : nodes.keySet()){
-        if(!node.equals(me)){
-          KVSCreate message = new KVSCreate(name,kvsConfiguration);
-          send(node,message);
+  @Override public KVSConfiguration createKVS(String nodeName, KVSConfiguration kvsConfiguration) {
+    List<String> clouds = kvsConfiguration.getClouds();
+    List<Long> createRequests = new ArrayList<>();
+    KVSConfiguration result = null;
+    if (clouds.size() == 0) {
+      clouds.addAll(this.cloudInfo.keySet());
+    }
+    for (String cloud : clouds) {
+      Map<String, NodeStatus> cloudNodes = getMicrocloudInfo(cloud);
+      if (cloudNodes == null || cloudNodes.size() == 0) {
+        return new KVSConfiguration();
+      }
+
+      for (String node : cloudNodes.keySet()) {
+        if (!node.equals(me)) {
+          KVSCreate message = new KVSCreate(nodeName, kvsConfiguration);
+          createRequests.add(sendRequest(node, message));
+        } else {
+          KVSConfiguration conf = kvsManager.bootstrapKVS(kvsConfiguration);
+          if (nodeName.equals(me)) {
+            result = conf;
+          }
         }
       }
+    }
+    for (Long request : createRequests) {
+      KVSDescriptionResponse response = (KVSDescriptionResponse) getRequestResult(request);
+      result = response.getConfiguration();
+    }
+    return result;
   }
 
   @Override public void startTask(TaskConfiguration task) {
@@ -372,8 +449,7 @@ public class NettyDataTransport implements MCDataTransport {
   }
 
 
-  @Override
-  public JobStatus getJobStatus(String id, String jobID) {
+  @Override public JobStatus getJobStatus(String id, String jobID) {
     return null;
   }
 
@@ -397,35 +473,39 @@ public class NettyDataTransport implements MCDataTransport {
 
   }
 
-  @Override public Map<String, Map<String, NodeStatus>> getMicrocloudInfo() {
+  @Override public SortedMap<String, SortedMap<String, NodeStatus>> getMicrocloudInfo() {
     return this.cloudInfo;
   }
 
-  @Override public Map<String, NodeStatus> getMicrocloudInfo(String siteName) {
+  @Override public SortedMap<String, NodeStatus> getMicrocloudInfo(String siteName) {
     return this.cloudInfo.get(siteName);
   }
 
   @Override public void batchSend(String nodeName, String kvsName, byte[] bytes,
-    Class<? extends WritableComparable> keyClass, Class<? extends Writable> valueClass) {
+    Class<? extends WritableComparable> keyClass, Class<? extends Writable> valueClass, boolean flush) {
+
     ChannelFuture channel = nodes.get(nodeName);
-    KVSBatchPut message = new KVSBatchPut(keyClass,valueClass,bytes,kvsName);
-    MCMessageWrapper wrapper = new MCMessageWrapper(message,getRequestID());
-    channel.channel().write(wrapper);
+    KVSBatchPut message = new KVSBatchPut(keyClass, valueClass, bytes, kvsName);
+    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
+    channel.channel().write(wrapper, channel.channel().voidPromise());
+    if(flush){
+      channel.channel().flush();
+    }
   }
 
   @Override public MCJobProxy submitJob(JobConfiguration configuration, String microcloud) {
     NodeStatus node = cloudInfo.get(microcloud).values().iterator().next();
-    MCJobProxy jobProxy = new MCJobProxy(node,configuration,this);
-    SubmitJob newJob = new SubmitJob(me,configuration);
-    this.send(node.getID(),newJob);
+    MCJobProxy jobProxy = new MCJobProxy(node, configuration, jobManager);
+    SubmitJob newJob = new SubmitJob(me, configuration);
+    this.sendAndFlush(node.getID(), newJob);
     return jobProxy;
   }
 
   @Override public MCJobProxy submitJob(JobConfiguration configuration) {
     String microcloud = null;
-    if(cloudInfo.size() > 0) {
+    if (cloudInfo.size() > 0) {
       microcloud = cloudInfo.keySet().iterator().next();
-    }else{
+    } else {
       return null;
     }
     return submitJob(configuration, microcloud);
@@ -435,7 +515,32 @@ public class NettyDataTransport implements MCDataTransport {
 
   }
 
+  @Override
+  public KVSDescriptionResponse getKVSInfo(String kvsStoreMaster, KVSDescriptionRequest request) {
+    if (nodes.containsKey(kvsStoreMaster)) {
+      long requestID = sendRequest(kvsStoreMaster, request);
+      KVSDescriptionResponse response = (KVSDescriptionResponse) getRequestResult(requestID);
+      return response;
+    }
+    KVSDescriptionResponse result = new KVSDescriptionResponse(new KVSConfiguration());
+    return result;
+  }
 
+  @Override public EventBus getEventBus() {
+    return eventBus;
+  }
+
+  @Override public String getNodeName(Channel channel) {
+    String result = clientMap.get(channel);
+    if(result == null) {
+      result = "";
+    }
+    return result;
+  }
+
+  @Override public void addClient(Channel channel, String nodeName) {
+    clientMap.put(channel, nodeName);
+  }
 
   public long getRequestID() {
     return requestID.incrementAndGet();

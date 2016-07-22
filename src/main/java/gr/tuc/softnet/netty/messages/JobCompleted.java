@@ -7,7 +7,8 @@ import gr.tuc.softnet.core.StringConstants;
  */
 public class JobCompleted extends MCMessage {
   public static final String TYPE = StringConstants.JOB_COMPLETED;
-  public JobCompleted(String messageType) {
+
+  public JobCompleted() {
     super(TYPE);
   }
 

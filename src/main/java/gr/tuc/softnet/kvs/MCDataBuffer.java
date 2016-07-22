@@ -8,7 +8,7 @@ import org.apache.hadoop.io.WritableComparable;
  */
 public interface MCDataBuffer {
     boolean append(WritableComparable key, Writable value);
-    void flush();
+    void flush(boolean b);
     void clear();
     byte[] toBytes();
     byte[] getBytesAndClear();

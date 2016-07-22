@@ -6,6 +6,7 @@ import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.JobManager;
 import gr.tuc.softnet.engine.TaskManager;
 import gr.tuc.softnet.kvs.KVSManager;
+import gr.tuc.softnet.netty.messages.MCMessage;
 import gr.tuc.softnet.netty.messages.MCMessageWrapper;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -72,13 +73,22 @@ public class NettyMessageRunnable implements Runnable {
 //  replyForMessage(ctx, nettyMessage);
 //  }
 @Override public void run() {
-  MCMessageHandler handler = MCMessageHandlerFactory.getHandler(nettyMessage.getType());
-  if(handler != null) {
-    handler.process(nettyMessage);
-  }else{
-    log.error("Could not find appropriate handler for " + nettyMessage.getType());
+  try {
+    MCMessageHandler handler = MCMessageHandlerFactory.getHandler(nettyMessage.getType());
+    MCMessageWrapper reply = null;
+    replyForMessage(ctx, nettyMessage);
+    if (handler != null) {
+      reply = handler.process(ctx.channel(), nettyMessage);
+    } else {
+      log.error("Could not find appropriate handler for " + nettyMessage.getType());
+    }
+
+    if (reply != null) {
+      ctx.writeAndFlush(reply);
+    }
+  }catch (Exception e){
+    e.printStackTrace();
   }
-  replyForMessage(ctx, nettyMessage);
 }
 
 

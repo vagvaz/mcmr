@@ -58,7 +58,7 @@ public class MCFederationReduceTask<INKEY extends WritableComparable,INVALUE ext
 
 
     public void initialize(TaskConfiguration configuration){
-
+        super.initialize(configuration);
         reducerClass = configuration.getFederationReducerClass();
         reducer = initializeFederationReducer(reducerClass,keyClass,valueClass,outKeyClass,outValueClass);
         Observable.create(inputStore).subscribe(subscriber);
@@ -74,16 +74,21 @@ public class MCFederationReduceTask<INKEY extends WritableComparable,INVALUE ext
 
     @Override
     public void run() {
-        while(enabledInput()){
-
+        synchronized (mutex) {
+            while (enabledInput()) {
+                try {
+                    mutex.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         finalizeTask();
-        for(Object ob : subscribers){
+        for (Object ob : subscribers) {
             Subscriber<? super MCTask> subscriber = (Subscriber<? super MCTask>) ob;
             subscriber.onNext(this);
             subscriber.onCompleted();
         }
-
     }
 
     @Override

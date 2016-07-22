@@ -26,6 +26,7 @@ public class MCDataBufferImpl implements MCDataBuffer {
   int currentSize = 0;
   MCDataTransport dataTransport;
   String kvsName;
+
   public MCDataBufferImpl(KVSConfiguration kvsConfiguration, MCDataTransport dataTransport, String nodeName, MCConfiguration configuration) {
     bos = new ByteArrayOutputStream();
     output = ByteStreams.newDataOutput(bos);
@@ -60,22 +61,23 @@ public class MCDataBufferImpl implements MCDataBuffer {
     return false;
   }
 
-  @Override public void flush() {
+  @Override public void flush(boolean b) {
     ByteArrayDataOutput outputTmp;
     int size = 0;
     synchronized (mutex) {
-      outputTmp = output;
-      size = currentSize;
-      currentSize = 0;
+
+
       try {
         bos.close();
+        dataTransport.batchSend(nodeName, kvsName,toBytes(), keyClass, valueClass,b);
+        currentSize = 0;
         bos = new ByteArrayOutputStream();
         output = ByteStreams.newDataOutput(bos);
       } catch (IOException e) {
         e.printStackTrace();
       }
     }
-    dataTransport.batchSend(nodeName, kvsName,toBytes(), keyClass, valueClass);
+
   }
 
   @Override public void clear() {

@@ -1,5 +1,6 @@
 package gr.tuc.softnet.engine;
 
+import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.core.NodeStatus;
 import gr.tuc.softnet.netty.MCDataTransport;
 
@@ -9,20 +10,23 @@ import gr.tuc.softnet.netty.MCDataTransport;
 public class MCJobProxy {
   NodeStatus coordinator;
   JobConfiguration configuration;
-  MCDataTransport transport;
-  public MCJobProxy(NodeStatus node, JobConfiguration configuration, MCDataTransport dataTransport) {
+  JobManager jobManager;
+  public MCJobProxy(NodeStatus node, JobConfiguration configuration, JobManager jobManager) {
     coordinator = node;
     this.configuration = configuration;
+    this.jobManager = jobManager;
+    this.configuration.setProperty(ConfStringConstants.COORDINATOR,node.getID());
+    jobManager.addRemoteJob(this.configuration);
   }
 
   public JobStatus getJobStatus(){
-    return transport.getJobStatus(coordinator.getID(),configuration.getJobID());
+    return jobManager.getJobStatus(configuration.getJobID());
   }
 
   public void cancelJob(){
-    transport.cancelJob(coordinator.getID(),configuration.getJobID(),configuration.getClouds());
+    jobManager.cancelJob(configuration.getJobID());
   }
   public void waitForCompletion(){
-    transport.waitForJobCompletion(coordinator.getID(),configuration.getJobID());
+    jobManager.waitForJobCompletion(configuration.getJobID());
   }
 }

@@ -31,7 +31,7 @@ public class MCMessageWrapper implements Serializable {
   }
 
   public MCMessage getMessage() {
-    return message;
+    return getMCMessage();
   }
 
   public void setMessage(MCMessage message) {
@@ -58,18 +58,19 @@ public class MCMessageWrapper implements Serializable {
     if(byte_message == null){
       byte_message = message.toBytes();
     }
-    out.writeUTF(type);
     out.writeInt(byte_message.length);
     out.write(byte_message);
+    out.writeObject(this.getType());
   }
 
   private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-    type = in.readUTF();
     byte_message = new byte[in.readInt()];
-    int readBytes = in.read(byte_message);
-    if(readBytes != byte_message.length) {
-      throw new IOException("Bytes are not ready ");
-    }
+    in.readFully(byte_message);
+//    if(readBytes != byte_message.length) {
+//      System.err.println("Bytes are not ready " + readBytes + " instead of " + byte_message.length);
+//    }
+    type = (String) in.readObject();
+
   }
 
   private void readObjectNoData() throws ObjectStreamException {

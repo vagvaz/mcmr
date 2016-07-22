@@ -20,7 +20,6 @@ public class KVSBatchPut extends MCMessage {
   Class<? extends Writable> valueClass;
   byte[] data;
   String kvsName;
-  private static Configuration conf = new Configuration();
 
   public  KVSBatchPut(){
     super(TYPE);
@@ -80,5 +79,37 @@ public class KVSBatchPut extends MCMessage {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+  }
+
+  public Class<? extends WritableComparable> getKeyClass() {
+    return keyClass;
+  }
+
+  public void setKeyClass(Class<? extends WritableComparable> keyClass) {
+    this.keyClass = keyClass;
+  }
+
+  public Class<? extends Writable> getValueClass() {
+    return valueClass;
+  }
+
+  public void setValueClass(Class<? extends Writable> valueClass) {
+    this.valueClass = valueClass;
+  }
+
+  public byte[] getData() {
+    return data;
+  }
+
+  public void setData(byte[] data) {
+    this.data = data;
+  }
+
+  public String getKvsName() {
+    return kvsName;
+  }
+
+  public void setKvsName(String kvsName) {
+    this.kvsName = kvsName;
   }
 }

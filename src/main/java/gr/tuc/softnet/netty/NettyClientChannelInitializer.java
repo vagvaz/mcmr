@@ -18,8 +18,9 @@ public class NettyClientChannelInitializer extends ChannelInitializer<SocketChan
   @Override protected void initChannel(SocketChannel ch) throws Exception {
     ChannelPipeline pipeline = ch.pipeline();
 
-    pipeline.addLast(new ObjectEncoder());
-    pipeline.addLast(new ObjectDecoder(1024*1024*50, ClassResolvers.cacheDisabled(null)));
+    pipeline.addLast(new MCMRNettyEncoder());
+    pipeline.addLast(new MCMRNettyDecoder(1024*1024*50, ClassResolvers.cacheDisabled(null)));
     pipeline.addLast(new NettyMessageHandler());
+
   }
 }

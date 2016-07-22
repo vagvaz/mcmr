@@ -57,7 +57,7 @@ public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends 
 
 
     public void initialize(TaskConfiguration configuration){
-
+        super.initialize(configuration);
         reducerClass = configuration.getLocalReducerClass();
         reducer = initializeLocalReducer(reducerClass,keyClass,valueClass,outKeyClass,outValueClass);
         Observable.create(inputStore).subscribe(subscriber);

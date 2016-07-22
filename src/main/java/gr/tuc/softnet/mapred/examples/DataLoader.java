@@ -2,6 +2,7 @@ package gr.tuc.softnet.mapred.examples;
 
 import com.google.inject.Injector;
 
+import gr.tuc.softnet.core.ConfStringConstants;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -40,9 +41,9 @@ public abstract class DataLoader<K extends WritableComparable, V extends Writabl
 
     KVSManager kvsManager = injector.getInstance(KVSManager.class);
 
-    kvsConfiguration = new KVSConfiguration(kvsName + "Configuration");  // TODO: Is the name ok?
-    kvsConfiguration.setCacheType(StringConstants.PIPELINE);
-    kvsConfiguration.setMaterialized(false);
+    kvsConfiguration = new KVSConfiguration(kvsName);  // TODO: Is the name ok?
+    kvsConfiguration.setCacheType(StringConstants.MAPDB);
+    kvsConfiguration.setMaterialized(true);
     kvsConfiguration.setKeyClass(keyClass);
     kvsConfiguration.setValueClass(valueClass);
     kvs = kvsManager.createKVS(kvsName, kvsConfiguration);
@@ -73,6 +74,7 @@ public abstract class DataLoader<K extends WritableComparable, V extends Writabl
         e.printStackTrace();
       }
     }
+    kvs.flush();
   }
 
   public abstract Map<K, V> parseData(File f) throws IOException;

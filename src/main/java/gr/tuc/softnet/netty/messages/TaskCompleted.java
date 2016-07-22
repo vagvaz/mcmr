@@ -11,6 +11,10 @@ public class TaskCompleted extends MCMessage {
     super(TYPE);
   }
 
+  public TaskCompleted() {
+    super(TYPE);
+  }
+
   @Override public byte[] toBytes() {
     return new byte[0];
   }

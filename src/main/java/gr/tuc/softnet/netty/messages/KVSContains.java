@@ -74,4 +74,28 @@ public class KVSContains<K extends WritableComparable> extends MCMessage{
       e.printStackTrace();
     }
   }
+
+  public String getKvsname() {
+    return kvsname;
+  }
+
+  public void setKvsname(String kvsname) {
+    this.kvsname = kvsname;
+  }
+
+  public Class<K> getKeyClass() {
+    return keyClass;
+  }
+
+  public void setKeyClass(Class<K> keyClass) {
+    this.keyClass = keyClass;
+  }
+
+  public K getKey() {
+    return key;
+  }
+
+  public void setKey(K key) {
+    this.key = key;
+  }
 }

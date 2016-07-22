@@ -2,26 +2,24 @@ package gr.tuc.softnet.netty.messages;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import gr.tuc.softnet.core.StringConstants;
-import gr.tuc.softnet.engine.JobConfiguration;
 import gr.tuc.softnet.kvs.KVSConfiguration;
+import gr.tuc.softnet.kvs.KVSWrapper;
 
 import java.io.*;
 
 /**
- * Created by vagvaz on 17/05/16.
+ * Created by vagvaz on 03/07/16.
  */
-public class SubmitJob extends MCMessage {
-  public static final String TYPE = StringConstants.SUBMIT_JOB;
-  String client;
-  JobConfiguration configuration;
-  public SubmitJob(){
+public class KVSDescriptionResponse extends MCMessage{
+  KVSConfiguration configuration;
+  public static final String TYPE = "KVSDescriptionResponse";
+  public KVSDescriptionResponse(KVSConfiguration configuration) {
     super(TYPE);
-  }
-  public SubmitJob(String client,JobConfiguration configuration) {
-    super(TYPE);
-    this.client = client;
     this.configuration = configuration;
+  }
+
+  public KVSDescriptionResponse() {
+    super(TYPE);
   }
 
   @Override public byte[] toBytes() {
@@ -29,7 +27,6 @@ public class SubmitJob extends MCMessage {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     try {
       oos =  new ObjectOutputStream(bos);
-      oos.writeUTF(client);
       oos.writeObject(configuration);
     } catch (IOException e) {
       e.printStackTrace();
@@ -50,8 +47,7 @@ public class SubmitJob extends MCMessage {
     ByteArrayInputStream bios = new ByteArrayInputStream(bytes);
     try {
       ios = new ObjectInputStream(bios);
-      client = ios.readUTF();
-      configuration = (JobConfiguration) ios.readObject();
+      configuration = (KVSConfiguration) ios.readObject();
       ios.close();
       bios.close();
     } catch (IOException e) {
@@ -61,19 +57,11 @@ public class SubmitJob extends MCMessage {
     }
   }
 
-  public String getClient() {
-    return client;
-  }
-
-  public void setClient(String client) {
-    this.client = client;
-  }
-
-  public JobConfiguration getConfiguration() {
+  public KVSConfiguration getConfiguration() {
     return configuration;
   }
 
-  public void setConfiguration(JobConfiguration configuration) {
+  public void setConfiguration(KVSConfiguration configuration) {
     this.configuration = configuration;
   }
 }

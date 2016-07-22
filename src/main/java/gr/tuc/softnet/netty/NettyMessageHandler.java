@@ -1,7 +1,9 @@
 package gr.tuc.softnet.netty;
 
 import com.google.inject.Inject;
+import gr.tuc.softnet.core.InjectorUtils;
 import gr.tuc.softnet.core.PrintUtilities;
+import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.kvs.KeyValueStore;
 import gr.tuc.softnet.netty.messages.MCMessageWrapper;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class NettyMessageHandler extends ChannelInboundHandlerAdapter {
     private Logger log = LoggerFactory.getLogger(this.getClass());
-    @Inject
+
     MCDataTransport owner;
 
   ThreadPoolExecutor threadPoolExecutor;
@@ -27,10 +29,11 @@ public class NettyMessageHandler extends ChannelInboundHandlerAdapter {
   int replied = 0;
 
   public NettyMessageHandler() {
-
+    owner = InjectorUtils.getInjector().getInstance(MCDataTransport.class);
+    threadPoolExecutor = new ThreadPoolExecutor(8,8,1000, TimeUnit.MILLISECONDS,  new LinkedBlockingDeque<Runnable>());
   }
   public void initialize(){
-    threadPoolExecutor = new ThreadPoolExecutor(8,8,1000, TimeUnit.MILLISECONDS,  new LinkedBlockingDeque<Runnable>());
+
   }
 
   @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -41,6 +44,11 @@ public class NettyMessageHandler extends ChannelInboundHandlerAdapter {
       }
       else if(msg instanceof MCMessageWrapper){
         MCMessageWrapper wrapper = (MCMessageWrapper) msg;
+        if(wrapper.getType().equals(StringConstants.ACK_MSG)){
+          AcknowledgeMessage ack  = (AcknowledgeMessage) wrapper.getMessage();
+          owner.acknowledge(ctx.channel(),ack.getAckMessageId());
+          return;
+        }
         NettyMessageRunnable runnable = new NettyMessageRunnable(ctx,wrapper);
         threadPoolExecutor.submit(runnable);
       }

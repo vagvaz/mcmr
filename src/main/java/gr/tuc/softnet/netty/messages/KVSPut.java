@@ -83,4 +83,44 @@ public class KVSPut <K extends WritableComparable, V extends Writable> extends M
       e.printStackTrace();
     }
   }
+
+  public String getKvsName() {
+    return kvsName;
+  }
+
+  public void setKvsName(String kvsName) {
+    this.kvsName = kvsName;
+  }
+
+  public Class<K> getKeyClass() {
+    return keyClass;
+  }
+
+  public void setKeyClass(Class<K> keyClass) {
+    this.keyClass = keyClass;
+  }
+
+  public Class<V> getValueClass() {
+    return valueClass;
+  }
+
+  public void setValueClass(Class<V> valueClass) {
+    this.valueClass = valueClass;
+  }
+
+  public K getKey() {
+    return key;
+  }
+
+  public void setKey(K key) {
+    this.key = key;
+  }
+
+  public V getValue() {
+    return value;
+  }
+
+  public void setValue(V value) {
+    this.value = value;
+  }
 }

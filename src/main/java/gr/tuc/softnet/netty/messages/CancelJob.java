@@ -13,6 +13,10 @@ public class CancelJob extends MCMessage {
     this.id = id;
   }
 
+  public CancelJob() {
+    super(TYPE);
+  }
+
   @Override public byte[] toBytes() {
     return new byte[0];
   }

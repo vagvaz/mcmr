@@ -11,14 +11,18 @@ import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.netty.MCDataTransport;
 import gr.tuc.softnet.netty.messages.NoMoreInputMessage;
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import rx.Observable;
 import rx.Subscriber;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by vagvaz on 03/03/16.
@@ -36,7 +40,10 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     @Inject
     KVSManager kvsManager;
     Map<String,MCJob> jobInfo;
+    Map<String,JobConfiguration> remoteJobs;
+    Map<String,List<Object>> pendingRequests;
     Logger logger = org.slf4j.LoggerFactory.getLogger(JobManager.class);
+    volatile ReentrantReadWriteLock mutex= new ReentrantReadWriteLock(true);
     private List<Subscriber<? super String>> subscribers;
 
     @Override
@@ -64,6 +71,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         kvsManager.createKVS(kvsConfiguration.getName(),kvsConfiguration);
 
        runReadyTasks(job);
+
         return true;
     }
 
@@ -158,6 +166,67 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
             }
         }
     }
+    @Override
+    public void addRemoteJob(JobConfiguration configuration){
+        synchronized (this.mutex){
+            if(!jobInfo.containsKey(configuration.getJobID())) {
+                this.remoteJobs.put(configuration.getJobID(), configuration);
+            }
+        }
+    }
+    @Override public void waitForJobCompletion(String jobID) {
+        MCJob job = this.jobInfo.get(jobID);
+        if(job == null){
+            JobConfiguration configuration = this.remoteJobs.get(jobID);
+            if (configuration == null){
+                return;
+            } else{
+                Lock lock = this.mutex.writeLock();
+                lock.lock();
+                {
+                    Object new_mutex = new Object();
+                    List<Object> mutexes = this.pendingRequests.get(jobID);
+                    if (mutexes == null){
+                        mutexes = new LinkedList<>();
+                    }
+                    mutexes.add(new_mutex);
+                    synchronized (new_mutex){
+                        dataTransport.waitForJobCompletion(
+                          (String) configuration.getProperty(ConfStringConstants.COORDINATOR), jobID);
+                        lock.unlock();
+                        try {
+                            new_mutex.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }
+        }else{
+            if(job.isCompleted()){
+                return;
+            }
+            Lock lock = this.mutex.writeLock();
+            lock.lock();
+            {
+                Object new_mutex = new Object();
+                List<Object> mutexes = this.pendingRequests.get(jobID);
+                if (mutexes == null){
+                    mutexes = new LinkedList<>();
+                }
+                mutexes.add(new_mutex);
+                synchronized (new_mutex){
+                    lock.unlock();
+                    try {
+                        new_mutex.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public String getID() {
@@ -172,6 +241,8 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     @Override
     public void initialize() {
         jobInfo = new HashedMap();
+        pendingRequests = new HashedMap();
+        remoteJobs = new HashedMap();
         subscribers = new ArrayList<>();
     }
 

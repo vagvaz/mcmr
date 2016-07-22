@@ -21,9 +21,9 @@ public class KVSFactory {
     this.systemConfiguration = configuration;
   }
 
-  public <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> createNewInstance(
+  public KeyValueStore createNewInstance(
       KVSConfiguration configuration) {
-    KeyValueStore<K, V> result = null;
+    KeyValueStore result = null;
 
     String type = configuration.getString(ConfStringConstants.CACHE_TYPE,StringConstants.PIPELINE);
 //        systemConfiguration.conf().getString(ConfStringConstants.CACHE_TYPE));
@@ -32,15 +32,28 @@ public class KVSFactory {
     if (type.equals(StringConstants.MAPDB)) {
       logger.info(
           "Create " + configuration.getName() + " MapDB kvs in " + configuration.getBaseDir());
-      result = new MapDBIndex<K, V>(configuration);
+      result = new MapDBSingleKVS(configuration);
     } else if (type.equals(StringConstants.LEVELDB)) {
       logger.info(
           "Create " + configuration.getName() + " LevelDB kvs in " + configuration.getBaseDir());
-      result = new LevelDBIndex<K, V>(configuration);
+      result = new LevelDBSignleKVS(configuration);
     } else if (type.equals(StringConstants.PIPELINE)) {
       logger.info(
           "Create " + configuration.getName() + " pipeline kvs in " + configuration.getBaseDir());
-      result = new TestKVS<K, V>();//(configuration.defaultBaseDir,configuration.getName());
+      result = new PipelineSingleKVS(configuration);//(configuration.defaultBaseDir,configuration.getName());
+      //            result = new PipelinedKeyValueStore<K,V>(configuration.defaultBaseDir,configuration.getName());
+    }else if (type.equals(StringConstants.MAPDB_INTERM)) {
+      logger.info(
+        "Create " + configuration.getName() + " MapDBInterm kvs in " + configuration.getBaseDir());
+      result = new MapDBMultiKVS(configuration);
+    } else if (type.equals(StringConstants.LEVELDB_INTERM)) {
+      logger.info(
+        "Create " + configuration.getName() + " LevelDB kvs in " + configuration.getBaseDir());
+      result = new LevelDBMultiKVS(configuration);
+    } else if (type.equals(StringConstants.PIPELINE_INTERM)) {
+      logger.info(
+        "Create " + configuration.getName() + " pipeline kvs in " + configuration.getBaseDir());
+      result = new PipelineMultiKVS(configuration);//(configuration.defaultBaseDir,configuration.getName());
       //            result = new PipelinedKeyValueStore<K,V>(configuration.defaultBaseDir,configuration.getName());
     } else {
       logger.error("Create KVS instance with invalid type " + type);

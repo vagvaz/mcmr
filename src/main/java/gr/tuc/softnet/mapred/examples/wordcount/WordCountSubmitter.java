@@ -7,6 +7,7 @@ import org.apache.hadoop.io.Text;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Vector;
 
 import gr.tuc.softnet.core.JobSubmitter;
@@ -35,7 +36,7 @@ public class WordCountSubmitter {
                                   boolean isFederationReducePipeline,
                                   String input,
                                   String output,
-                                  ArrayList<String> clouds) {
+                                  Iterable<String> clouds) {
     JobConfiguration c = new JobConfiguration();
 
     c.setMapperClass(WordCountMapper.class);
@@ -44,16 +45,18 @@ public class WordCountSubmitter {
     c.setIsMapPipeline(isMapPipeline);
 
     c.setCombinerClass(WordCountReducer.class);
-
+    c.setUseLocalReducer(false);
+    c.setLocalReducerClass(WordCountReducer.class);
     c.setLocalReduceOutputKeyClass(Text.class);
     c.setLocalReduceOutputValueClass(IntWritable.class);
     c.setIsLocalReducePipeline(isLocalReducePipeline);
-
+    c.setFederationReducerClass(WordCountReducer.class);
     c.setFederationReduceOutputKeyClass(Text.class);
     c.setFederationReduceOutputValueClass(Text.class);
     c.setIsFederationReducePipeline(isFederationReducePipeline);
-
-    c.setClouds(clouds);
+    for(String cloud : clouds) {
+      c.appendCloud(cloud);
+    }
 
     c.setInput(input);
     c.setOutput(output);

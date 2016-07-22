@@ -18,4 +18,8 @@ public interface JobManager  extends MCInitializable,IDable{
     JobStatus getJobStatus(String jobID);
     void waitForCompletion(String jobID);
     void taskCompleted(String jobID, String cloud, String id);
+
+    void addRemoteJob(JobConfiguration configuration);
+
+    void waitForJobCompletion(String jobID);
 }

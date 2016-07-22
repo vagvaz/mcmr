@@ -39,4 +39,8 @@ public class KVSDestroy extends MCMessage {
     ByteArrayDataInput input = ByteStreams.newDataInput(bytes);
     kvsName = input.readUTF();
   }
+
+  public String getKvsName() {
+    return kvsName;
+  }
 }

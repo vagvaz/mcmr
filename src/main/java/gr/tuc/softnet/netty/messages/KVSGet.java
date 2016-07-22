@@ -17,7 +17,6 @@ public class KVSGet<K extends WritableComparable> extends MCMessage {
   String name;
   Class<K> keyClass;
   K key;
-  private static Configuration conf = new Configuration();
 
   public  KVSGet(){
     super(TYPE);
@@ -63,7 +62,7 @@ public class KVSGet<K extends WritableComparable> extends MCMessage {
     try {
       ios = new ObjectInputStream(bios);
       keyClass = (Class<K>) ios.readObject();
-      key = ReflectionUtils.newInstance(keyClass,conf);
+      key = ReflectionUtils.newInstance(keyClass,null);
       ByteArrayDataInput dataInput =  ByteStreams.newDataInput(bios);
       key.readFields(dataInput);
       name = dataInput.readUTF();
@@ -72,5 +71,29 @@ public class KVSGet<K extends WritableComparable> extends MCMessage {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public Class<K> getKeyClass() {
+    return keyClass;
+  }
+
+  public void setKeyClass(Class<K> keyClass) {
+    this.keyClass = keyClass;
+  }
+
+  public K getKey() {
+    return key;
+  }
+
+  public void setKey(K key) {
+    this.key = key;
   }
 }

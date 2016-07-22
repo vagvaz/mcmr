@@ -2,6 +2,7 @@ package gr.tuc.softnet.engine;
 
 import gr.tuc.softnet.core.ConfStringConstants;
 import gr.tuc.softnet.mapred.MCMapper;
+import gr.tuc.softnet.mapred.examples.wordcount.WordCountReducer;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -91,7 +92,12 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
     public Class<? extends Reducer<?, ?, ?, ?>> getLocalReducerClass() {
         return (Class<? extends Reducer<?, ?, ?, ?>>) getProperty(ConfStringConstants.LOCAL_REDUCER_CLASS);
     }
-
+    public void setLocalReducerClass(Class<? extends Reducer<?, ?, ?, ?>> reducerClass) {
+        setProperty(ConfStringConstants.LOCAL_REDUCER_CLASS, reducerClass);
+    }
+    public void setFederationReducerClass(Class<? extends Reducer<?, ?, ?, ?>> reducerClass) {
+        setProperty(ConfStringConstants.FEDERATION_REDUCER_CLASS, reducerClass);
+    }
     public void setMapperClass(Class<? extends MCMapper> mapperClass) {
         setProperty(ConfStringConstants.MAP_CLASS, mapperClass);
     }
@@ -185,7 +191,16 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
     }
     public void appendCloud(String cloud){
         String value = getString(ConfStringConstants.CLOUD_LIST);
-        value+=","+cloud;
+        if (value != null) {
+            if (!value.equals("")) {
+                value += "," + cloud;
+            }
+            else{
+                value = cloud;
+            }
+        }else{
+            value = cloud;
+        }
         setProperty(ConfStringConstants.CLOUD_LIST,value);
     }
     public List<String> getClouds() {
@@ -202,7 +217,7 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
     }
 
     public boolean hasLocalReduce() {
-        return getLocalReducerClass() != null;
+        return getBoolean(ConfStringConstants.USE_LOCAL_REDUCE, false);
     }
 
     public String getJobID() {
@@ -247,4 +262,14 @@ public class JobConfiguration extends HierarchicalConfiguration implements Seria
 
     }
 
+    public void setClient(String client) {
+        setProperty(ConfStringConstants.JOB_CLIENT, client);
+    }
+    public String getClient(){
+        return getString(ConfStringConstants.JOB_CLIENT,"");
+    }
+
+    public void setUseLocalReducer(boolean b) {
+        setProperty(ConfStringConstants.USE_LOCAL_REDUCE, b);
+    }
 }

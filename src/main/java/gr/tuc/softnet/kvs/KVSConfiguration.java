@@ -42,6 +42,45 @@ public class KVSConfiguration extends HierarchicalConfiguration implements Seria
         this.append(configuration);
 
     }
+
+    public void setClouds(List<String> clouds){
+        String cloudsValue = "";
+        for(int index = 0; index < clouds.size(); index++){
+            cloudsValue += ","+clouds.get(index);
+        }
+        setProperty(ConfStringConstants.CLOUD_LIST, cloudsValue);
+    }
+
+    public List<String> getClouds(){
+        String clouds = getString(ConfStringConstants.CLOUD_LIST,"");
+        if(clouds.equals("")){
+            return new ArrayList<>();
+        }
+        else{
+            String[] cloudArray = clouds.split(",");
+            List<String> result = new ArrayList<>();
+            for (String cloud: cloudArray){
+                result.add(cloud);
+            }
+            return result;
+        }
+    }
+
+    public void appendCloud(String cloud){
+        String value = getString(ConfStringConstants.CLOUD_LIST);
+        if (value != null) {
+            if (!value.equals("")) {
+                value += "," + cloud;
+            }
+            else{
+                value = cloud;
+            }
+        }else{
+            value = cloud;
+        }
+        setProperty(ConfStringConstants.CLOUD_LIST,value);
+    }
+    
     public void setCacheType(String type){
         setProperty(ConfStringConstants.CACHE_TYPE,type);
     }
@@ -93,7 +132,31 @@ public class KVSConfiguration extends HierarchicalConfiguration implements Seria
     public void setKeyClass(Class<? extends Comparable> keyClass) {
        setProperty(ConfStringConstants.KEY_CLASS,keyClass);
     }
+    public Class<? extends MCPartitioner> getPartitionerClass(){
+        Class<? extends MCPartitioner> result =
+          (Class<? extends MCPartitioner>) getProperty(ConfStringConstants.KVS_PARTITIONER);
+        if(result == null) {
+            setProperty(ConfStringConstants.KVS_PARTITIONER,DefaultHashPartitioner.class);
+            return DefaultHashPartitioner.class;
+        }
+        return result;
+    }
 
+    public void setPartitionerClass(Class<? extends MCPartitioner> partitionerClass){
+        setProperty(ConfStringConstants.KVS_PARTITIONER,partitionerClass);
+    }
+
+    public Properties getPartitionerConf(){
+        Properties result = (Properties) getProperty(ConfStringConstants.KVS_PARTITIONER_CONF);
+        if (result == null){
+            result = new Properties();
+              setProperty(ConfStringConstants.KVS_PARTITIONER_CONF,result);
+        }
+        return result;
+    }
+    public void setPartitionerConf(Properties partitionerConf){
+        setProperty(ConfStringConstants.KVS_PARTITIONER_CONF,partitionerConf);
+    }
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         Iterator<String> iterator =  this.getKeys();
         int counter = 0;

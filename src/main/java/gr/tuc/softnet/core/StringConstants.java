@@ -37,7 +37,9 @@ public class StringConstants {
   public static final java.lang.String PUBLIC_IP = "node.public.ip";
   public static final java.lang.String NUM_BUCKETS = "partition.num.buckets";
   public static final String MAPDB = "mapdb";
+  public static final String MAPDB_INTERM = "mapdb_interm";
   public static final String LEVELDB = "leveldb";
+  public static final String LEVELDB_INTERM = "leveldb_interm";
   public static final String DEFAULT_CONF_DIR = "conf/";
   public static final String BATCH_TASK = "ENGbatchTask";
   public static final String KILL_NODE = "NODkillNode";
@@ -56,9 +58,11 @@ public class StringConstants {
   public static final String KVS_PUT = "KVSPut";
   public static final String KVS_GET = "KVSGet";
   public static final String KVS_GET_RESPONSE = "KVSGetResponse";
+  public static final String ACK_MSG = "ACK";
   public static String PIPELINE_TASK = "pipelineTask";
   public static java.lang.String SIZES_CACHE = "sizesCache";
   public static String PIPELINE = "pipeline";
+  public static String PIPELINE_INTERM = "pipeline_interm";
 
 
 

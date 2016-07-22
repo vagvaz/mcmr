@@ -55,12 +55,12 @@ public class KVSProxy<K extends WritableComparable,V extends Writable> implement
     }
 
     private void flush(int index) {
-        dataBuffers.get(index).flush();
+        dataBuffers.get(index).flush(true);
     }
 
     public void flush(){
         for(Map.Entry<Integer,MCDataBuffer> entry : dataBuffers.entrySet()){
-            entry.getValue().flush();
+            entry.getValue().flush(true);
         }
     }
 

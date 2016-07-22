@@ -11,6 +11,10 @@ public class KillNode extends MCMessage {
     super(TYPE);
   }
 
+  public KillNode() {
+    super(TYPE);
+  }
+
   @Override public byte[] toBytes() {
     return new byte[0];
   }

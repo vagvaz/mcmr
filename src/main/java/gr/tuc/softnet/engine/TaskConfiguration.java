@@ -147,7 +147,7 @@ public class TaskConfiguration extends HierarchicalConfiguration implements Seri
     }
 
     public boolean isMap() {
-        return getBoolean(ConfStringConstants.IS_MAP_TASK);
+        return getBoolean(ConfStringConstants.IS_MAP_TASK, false);
     }
 
     public void setMap(boolean isMap) {
@@ -155,7 +155,7 @@ public class TaskConfiguration extends HierarchicalConfiguration implements Seri
     }
 
     public boolean isLocalReduce() {
-        return getBoolean(ConfStringConstants.IS_LOCAL_REDUCE);
+        return getBoolean(ConfStringConstants.IS_LOCAL_REDUCE, false);
     }
 
     public void setLocalReduce(boolean isLocalReduce) {
@@ -163,7 +163,7 @@ public class TaskConfiguration extends HierarchicalConfiguration implements Seri
     }
 
     public boolean isFederationReduce() {
-        return getBoolean(ConfStringConstants.IS_FEDERATION_REDUCE);
+        return getBoolean(ConfStringConstants.IS_FEDERATION_REDUCE, false);
     }
 
     public void setFederationReduce(boolean isFederationReduce) {

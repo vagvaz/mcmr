@@ -41,6 +41,10 @@ public class ConfStringConstants {
     public static final String IP = "nodeIP";
     public static final String PORT = "nodePort";
     public static final String USER_JOB_CONFIG = "UserJobConfiguration";
+    public static final String KVS_PARTITIONER = "kvsPartitioner";
+    public static final String KVS_PARTITIONER_CONF = "kvsConfPartioner";
+    public static final java.lang.String JOB_CLIENT = "jobClientIP";
+    public static final String USE_LOCAL_REDUCE = "UseLocalReducer";
     public static String MAP_CLASS = "taskMapClass";
     public static String FEDERATION_REDUCER_CLASS = "taskFederationReducerClass";
     public static String LOCAL_REDUCER_CLASS = "taskLocalReducerClass";

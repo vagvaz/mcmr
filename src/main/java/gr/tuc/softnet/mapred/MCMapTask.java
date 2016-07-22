@@ -27,7 +27,7 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
 
   }
 
-  private Mapper<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context context;
+
   Subscriber<Map.Entry<INKEY, INVALUE>> subscriber = new Subscriber<Map.Entry<INKEY, INVALUE>>() {
     @Override public void onCompleted() {
       inputEnabled = false;
@@ -45,7 +45,7 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
 
     @Override public void onNext(Map.Entry<INKEY, INVALUE> entry) {
       try {
-        mapper.map(entry.getKey(), entry.getValue(), context);
+        mapper.map(entry.getKey(), entry.getValue(), mapContext);
       } catch (IOException e) {
         Observable.create(inputStore).subscribe(subscriber);
         status.setException(e);
@@ -94,7 +94,7 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
 
   @Override public void finalizeTask() {
     try {
-      mapper.cleanup(context);
+      mapper.cleanup(mapContext);
     } catch (IOException e) {
       e.printStackTrace();
     } catch (InterruptedException e) {

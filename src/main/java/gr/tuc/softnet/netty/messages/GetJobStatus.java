@@ -11,6 +11,10 @@ public class GetJobStatus extends MCMessage {
     super(TYPE);
   }
 
+  public GetJobStatus() {
+    super(TYPE);
+  }
+
   @Override public byte[] toBytes() {
     return new byte[0];
   }

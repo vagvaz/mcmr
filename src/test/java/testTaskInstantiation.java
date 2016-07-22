@@ -49,6 +49,7 @@ public class testTaskInstantiation {
         configuration.setMapOutputValueClass(IntWritable.class);
         configuration.setMapperClass(WordCountMapper.class);
         configuration.setInput("testInput");
+        configuration.setOutput("testInput");
         taskManager.initialize();
         taskManager.startTask(configuration);
 

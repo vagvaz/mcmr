@@ -20,8 +20,8 @@ public class NettyServerChannelInitializer extends ChannelInitializer<SocketChan
 //    ch.config();
 //    pipeline.addLast(new NettyMessageDecoder());
 //    pipeline.addLast(new NettyMessageHandler());
-    pipeline.addLast(new ObjectEncoder());
-    pipeline.addLast(new ObjectDecoder(1024*1024*50, ClassResolvers.cacheDisabled(null)));
+    pipeline.addLast(new MCMRNettyEncoder());
+    pipeline.addLast(new MCMRNettyDecoder(1024*1024*50, ClassResolvers.cacheDisabled(null)));
     pipeline.addLast(new NettyMessageHandler());
   }
 }

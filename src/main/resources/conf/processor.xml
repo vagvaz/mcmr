@@ -3,8 +3,8 @@
     <node>
         <id>${node.hostname}</id>
         <cluster>localcloud</cluster>
-        <public.ip>127.0.0.1</public.ip>
-        <interface>lo</interface>
+        <public_ip>192.168.0.2</public_ip>
+        <interface>wlan0</interface>
         <port>10000</port>
     </node>
     <kvs>
@@ -44,7 +44,7 @@
     <network>
         <mc>
             <name>locacluster</name>
-            <node>127.0.0.1:10000</node>
+            <node>192.168.0.2:10000</node>
         </mc>
     </network>
 </mcmapreduce>

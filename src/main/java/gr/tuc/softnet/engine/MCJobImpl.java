@@ -48,6 +48,11 @@ public class MCJobImpl implements MCJob {
   }
 
   @Override public void initialize(JobConfiguration jobConf, Map<String, NodeStatus> clouds) {
+    if(jobConf.getJobID() == null){
+      jobConf.setJobID(generateJobID(jobConf));
+    }
+    mc_nodes = new HashedMap();
+    this.jobConf = jobConf;
     jobStatus = new JobStatus(this);
     mapTasks = new HashedMap();
     runningMapTasks = new HashedMap();
@@ -87,17 +92,17 @@ public class MCJobImpl implements MCJob {
       }
       mapTasks.put(entry.getKey(),tasks);
     }
-
-    for(Map.Entry<String, Map<String, NodeStatus>> entry : mc_nodes.entrySet()){
-      Map<String,TaskConfiguration> tasks = new HashedMap();
-      for(Map.Entry<String,NodeStatus> nodeEntry : entry.getValue().entrySet()){
-        TaskConfiguration task = createlocalReduceTask(nodeEntry.getValue());
-        task.setTargetCloud(entry.getKey());
-        tasks.put(task.getID(),task);
+    if(jobConf.hasLocalReduce()) {
+      for (Map.Entry<String, Map<String, NodeStatus>> entry : mc_nodes.entrySet()) {
+        Map<String, TaskConfiguration> tasks = new HashedMap();
+        for (Map.Entry<String, NodeStatus> nodeEntry : entry.getValue().entrySet()) {
+          TaskConfiguration task = createlocalReduceTask(nodeEntry.getValue());
+          task.setTargetCloud(entry.getKey());
+          tasks.put(task.getID(), task);
+        }
+        localReduceTasks.put(entry.getKey(), tasks);
       }
-      localReduceTasks.put(entry.getKey(),tasks);
     }
-
     for(Map.Entry<String, Map<String, NodeStatus>> entry : mc_nodes.entrySet()){
       Map<String,TaskConfiguration> tasks = new HashedMap();
       for(Map.Entry<String,NodeStatus> nodeEntry : entry.getValue().entrySet()){
@@ -107,6 +112,10 @@ public class MCJobImpl implements MCJob {
       }
       federationReduceTasks.put(entry.getKey(),tasks);
     }
+  }
+
+  private String generateJobID(JobConfiguration jobconf) {
+    return UUID.randomUUID().toString();
   }
 
   private TaskConfiguration createFederationReduceTask(NodeStatus value) {
@@ -273,11 +282,11 @@ public class MCJobImpl implements MCJob {
 
   public List<TaskConfiguration> invokeFederationReduceTasks(String microcloud){
     List<TaskConfiguration> result = new LinkedList<>();
-    for(Map.Entry<String,TaskConfiguration> taskEntry : localReduceTasks.get(microcloud).entrySet()){
+    for(Map.Entry<String,TaskConfiguration> taskEntry : federationReduceTasks.get(microcloud).entrySet()){
       result.add(taskEntry.getValue());
     }
     //put batch into running mapTasks
-    runningLocalReduceTasks.put(microcloud,localReduceTasks.get(microcloud));
+    runningFederationReduceTasks.put(microcloud,federationReduceTasks.get(microcloud));
     return result;
   }
 
@@ -302,7 +311,7 @@ public class MCJobImpl implements MCJob {
           }
           runningFederationReduceTasks.clear();
         }
-
+        currentStage = Stage.MAP;
         break;
       case MAP:
         if(mapTasks.size() != 0){
@@ -419,7 +428,7 @@ public class MCJobImpl implements MCJob {
         }
       }
     }else{
-      TaskConfiguration configuration = runningLocalReduceTasks.get(microcloud).get(id);
+      TaskConfiguration configuration = runningFederationReduceTasks.get(microcloud).get(id);
       if(configuration == null){
         logger.error("FederationReduce task "  + id + " Is not handled by " + jobConf.getJobID() + " in " + nodeManager.getNodeID());
         return result;

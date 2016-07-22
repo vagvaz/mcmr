@@ -6,6 +6,7 @@ import gr.tuc.softnet.engine.JobManager;
 import gr.tuc.softnet.engine.TaskManager;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.netty.messages.MCMessageWrapper;
+import io.netty.channel.Channel;
 
 /**
  * Created by vagvaz on 18/05/16.
@@ -23,5 +24,5 @@ public abstract class MCMessageHandler {
     jobManager = InjectorUtils.getInjector().getInstance(JobManager.class);
     taskManager = InjectorUtils.getInjector().getInstance(TaskManager.class);
   }
-  abstract public void process(MCMessageWrapper wrapper);
+  abstract public MCMessageWrapper process(Channel node, MCMessageWrapper wrapper);
 }
