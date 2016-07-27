@@ -45,7 +45,7 @@ public class WordCountSubmitter {
     c.setIsMapPipeline(isMapPipeline);
 
     c.setCombinerClass(WordCountReducer.class);
-    c.setUseLocalReducer(false);
+    c.setUseLocalReducer(true);
     c.setLocalReducerClass(WordCountReducer.class);
     c.setLocalReduceOutputKeyClass(Text.class);
     c.setLocalReduceOutputValueClass(IntWritable.class);

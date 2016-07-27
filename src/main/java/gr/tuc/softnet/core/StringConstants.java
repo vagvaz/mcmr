@@ -59,6 +59,7 @@ public class StringConstants {
   public static final String KVS_GET = "KVSGet";
   public static final String KVS_GET_RESPONSE = "KVSGetResponse";
   public static final String ACK_MSG = "ACK";
+  public static final String REQUEST_NUMBER = "_RequestNumber";
   public static String PIPELINE_TASK = "pipelineTask";
   public static java.lang.String SIZES_CACHE = "sizesCache";
   public static String PIPELINE = "pipeline";

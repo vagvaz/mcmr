@@ -127,7 +127,7 @@ public class MCJobImpl implements MCJob {
       result.setInput(mapOutputKVSConf.getName());
     }
     result.setOutput(federationReduceOutputKVSConf.getName());
-    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getNodeID());
+    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getConfiguration().getURI());
     result.setJar(jobConf.getJar());
     result.setJobID(jobConf.getJobID());
     result.setOutKeyClass(jobConf.getFederationReduceOutputKeyClass());
@@ -149,7 +149,7 @@ public class MCJobImpl implements MCJob {
     result.setLocalReduce(true);
     result.setInput(mapOutputKVSConf.getName());
     result.setOutput(localReduceOutputKVSConf.getName());
-    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getNodeID());
+    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getConfiguration().getURI());
     result.setJar(jobConf.getJar());
     result.setJobID(jobConf.getJobID());
     result.setOutKeyClass(jobConf.getLocalReduceOutputKeyClass());
@@ -172,7 +172,7 @@ public class MCJobImpl implements MCJob {
     result.setMapOutputValueClass(jobConf.getMapOutputValueClass());
     result.setOutput(mapOutputKVSConf.getName());
     result.setCombinerClass(jobConf.getCombinerClass());
-    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getNodeID());
+    result.setProperty(ConfStringConstants.COORDINATOR,nodeManager.getConfiguration().getURI());
     result.setJar(jobConf.getJar());
     result.setJobID(jobConf.getJobID());
     result.setOutKeyClass(jobConf.getMapOutputKeyClass());
@@ -187,7 +187,7 @@ public class MCJobImpl implements MCJob {
   }
 
   private KVSConfiguration initLocalReduceOutput() {
-    if(jobConf.hasLocalReduce()){
+    if(!jobConf.hasLocalReduce()){
       return null;
     }
     KVSConfiguration result = new KVSConfiguration();

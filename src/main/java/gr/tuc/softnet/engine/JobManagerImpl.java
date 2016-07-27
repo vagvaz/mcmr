@@ -28,7 +28,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by vagvaz on 03/03/16.
  */
 @Singleton
-public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String> {
+public class JobManagerImpl implements JobManager, Observable.OnSubscribe<JobConfiguration> {
     @Inject
     MCDataTransport dataTransport;
     @Inject
@@ -44,7 +44,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     Map<String,List<Object>> pendingRequests;
     Logger logger = org.slf4j.LoggerFactory.getLogger(JobManager.class);
     volatile ReentrantReadWriteLock mutex= new ReentrantReadWriteLock(true);
-    private List<Subscriber<? super String>> subscribers;
+    private List<Subscriber<? super JobConfiguration>> subscribers;
 
     @Override
     public boolean startJob(List<NodeStatus> nodes, JobConfiguration jobConfiguration) {
@@ -122,8 +122,17 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
     }
 
     @Override
-    public void completedJob(String jobID) {
+    public void completedJob(JobConfiguration job) {
         //Nothing to do for now no remote monitoring of a job
+        List<Object> mutexes = this.pendingRequests.get(job.getJobID());
+        this.remoteJobs.put(job.getJobID(), job);
+        if(mutexes != null){
+            for(Object mutex : mutexes){
+                synchronized (mutex) {
+                    mutex.notify();
+                }
+            }
+        }
     }
 
     @Override
@@ -160,10 +169,11 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
 
         runReadyTasks(job);
         if(job.isCompleted()){
-            for(Subscriber<? super String> subscriber : subscribers){
-                subscriber.onNext(job.getID());
+            for(Subscriber<? super JobConfiguration> subscriber : subscribers){
+                subscriber.onNext(job.getJobConfiguration());
                 subscriber.onCompleted();
             }
+            dataTransport.jobCompleted(job.getJobConfiguration());
         }
     }
     @Override
@@ -188,6 +198,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
                     List<Object> mutexes = this.pendingRequests.get(jobID);
                     if (mutexes == null){
                         mutexes = new LinkedList<>();
+                        this.pendingRequests.put(jobID,mutexes);
                     }
                     mutexes.add(new_mutex);
                     synchronized (new_mutex){
@@ -246,7 +257,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<String
         subscribers = new ArrayList<>();
     }
 
-    @Override public void call(Subscriber<? super String> subscriber) {
+    @Override public void call(Subscriber<? super JobConfiguration> subscriber) {
         subscribers.add(subscriber);
     }
 }

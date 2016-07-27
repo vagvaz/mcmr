@@ -71,7 +71,7 @@ public interface MCDataTransport  {
 
     JobStatus getJobStatus(String id, String jobID);
 
-    void taskCompleted(String coordinator, String targetCloud, String id);
+    void taskCompleted(TaskConfiguration task);
 
     KeyValueStore getKVS(String cache);
 
@@ -101,4 +101,6 @@ public interface MCDataTransport  {
     String getNodeName(Channel channel);
 
     public void addClient(Channel channel, String nodeName);
+
+    void jobCompleted(JobConfiguration configuration);
 }

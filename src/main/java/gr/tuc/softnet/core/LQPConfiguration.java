@@ -297,6 +297,7 @@ public class LQPConfiguration implements MCConfiguration {
     String ip = (String) this.conf().getProperty("node.public_ip");
     String port = (String) this.conf().getProperty("node.port");
     return ip+":"+port;
+//    return "";
   }
 
 

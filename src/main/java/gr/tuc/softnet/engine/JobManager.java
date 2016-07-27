@@ -14,7 +14,7 @@ public interface JobManager  extends MCInitializable,IDable{
     boolean startJob(JobConfiguration jobConfiguration);
     boolean cancelJob(List<NodeStatus> nodes, String jobID);
     boolean cancelJob(String jobID);
-    void completedJob(String jobID);
+    void completedJob(JobConfiguration job);
     JobStatus getJobStatus(String jobID);
     void waitForCompletion(String jobID);
     void taskCompleted(String jobID, String cloud, String id);

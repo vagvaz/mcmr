@@ -7,6 +7,7 @@ import com.google.inject.Singleton;
 import gr.tuc.softnet.core.MCConfiguration;
 import gr.tuc.softnet.core.NodeStatus;
 import gr.tuc.softnet.core.PrintUtilities;
+import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.engine.*;
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.KVSManager;
@@ -441,7 +442,8 @@ import java.util.concurrent.atomic.AtomicLong;
   }
 
   @Override public void startTask(TaskConfiguration task) {
-
+    StartTask taskMessage = new StartTask(task);
+    this.sendAndFlush(task.getNodeTargetNode(),taskMessage);
   }
 
   @Override public boolean cancelJob(String node, String jobID, List<String> nodes) {
@@ -453,8 +455,9 @@ import java.util.concurrent.atomic.AtomicLong;
     return null;
   }
 
-  @Override public void taskCompleted(String coordinator, String targetCloud, String id) {
-
+  @Override public void taskCompleted(TaskConfiguration task) {
+    TaskCompleted completedTask = new TaskCompleted(task);
+    this.sendAndFlush(task.getCoordinator(), completedTask);
   }
 
   @Override public KeyValueStore getKVS(String cache) {
@@ -540,6 +543,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
   @Override public void addClient(Channel channel, String nodeName) {
     clientMap.put(channel, nodeName);
+  }
+
+  @Override public void jobCompleted(JobConfiguration completedJob) {
+    JobCompleted completed = new JobCompleted(completedJob);
+//    this.sendRequestResponse(completedJob.getClient(),completed, completedJob.getLong(StringConstants.REQUEST_NUMBER));
+    this.sendAndFlush(completedJob.getClient(),completed);
   }
 
   public long getRequestID() {

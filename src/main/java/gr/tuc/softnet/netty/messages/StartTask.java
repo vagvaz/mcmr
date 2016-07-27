@@ -2,6 +2,7 @@ package gr.tuc.softnet.netty.messages;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.engine.TaskConfiguration;
 
 import java.io.*;
@@ -10,7 +11,7 @@ import java.io.*;
  * Created by vagvaz on 22/04/16.
  */
 public class StartTask extends MCMessage {
-  public static final String TYPE = "ENGStartTask";
+  public static final String TYPE = StringConstants.START_TASK;
   TaskConfiguration conf;
   public StartTask(){
     super(TYPE);

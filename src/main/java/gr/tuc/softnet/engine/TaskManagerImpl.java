@@ -116,7 +116,8 @@ public class TaskManagerImpl implements TaskManager, Observer<MCTask> {
         if (coordinator.equals(getConfiguration().getNodeName()) || coordinator.equals(getConfiguration().getURI())) {
             jobManager.taskCompleted(mcTask.getTaskConfiguration().getJobID(), mcTask.getTaskConfiguration().getTargetCloud(),  mcTask.getTaskConfiguration().getID());
         } else {
-            dataTransport.taskCompleted(mcTask.getTaskConfiguration().getCoordinator(), mcTask.getTaskConfiguration().getTargetCloud(), mcTask.getTaskConfiguration().getID());
+//            dataTransport.taskCompleted(mcTask.getTaskConfiguration().getCoordinator(), mcTask.getTaskConfiguration().getTargetCloud(), mcTask.getTaskConfiguration().getID());
+            dataTransport.taskCompleted(mcTask.getTaskConfiguration());
         }
     }
 }

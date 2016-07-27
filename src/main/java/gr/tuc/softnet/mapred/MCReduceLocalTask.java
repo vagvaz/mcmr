@@ -73,8 +73,14 @@ public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends 
 
     @Override
     public void run() {
-        while(enabledInput()){
-
+        synchronized (mutex) {
+            while (enabledInput()) {
+                try {
+                    mutex.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         finalizeTask();
         for(Object ob : subscribers){

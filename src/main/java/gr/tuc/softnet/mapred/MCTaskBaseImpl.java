@@ -173,8 +173,7 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable, INVALUE e
 
   public MCReducer<INKEY, INVALUE, OUTKEY, OUTVALUE> initializeLocalReducer(Class reducerClass,
     Class keyClass, Class valueClass, Class outKeyClass, Class outValueClass) {
-    MCReducer<INKEY, INVALUE, OUTKEY, OUTVALUE> result =
-      null; //TODO read from class loader initialize install
+    MCReducer<INKEY, INVALUE, OUTKEY, OUTVALUE> result =       null; //TODO read from class loader initialize install
     try {
       if (reducerClass.getCanonicalName() != null && !reducerClass.getCanonicalName().equals("")) {
         try {

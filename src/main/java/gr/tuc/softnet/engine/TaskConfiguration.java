@@ -94,7 +94,7 @@ public class TaskConfiguration extends HierarchicalConfiguration implements Seri
     }
 
     public void setLocalReducerClass(Class<? extends Reducer<?,?,?,?>> reducerClass){
-        setProperty(ConfStringConstants.FEDERATION_REDUCER_CLASS,reducerClass);
+        setProperty(ConfStringConstants.LOCAL_REDUCER_CLASS,reducerClass);
     }
 
 
