@@ -28,12 +28,18 @@ public class MapDBMultiKVSValuesIterator<K extends WritableComparable, V extends
   }
 
   @Override
-  public V next() {
+  synchronized public V next() {
     if (valuesCount < 0) {
       throw new NoSuchElementException();
     }
     --valuesCount;
     assert (dataIterator.hasNext());
-    return dataIterator.next().getValue();
+    V result = dataIterator.next().getValue();
+    return result;
+  }
+
+  @Override protected void finalize() throws Throwable {
+    if(valuesCount >= 0)
+      throw new AssertionError("values count is not what is supposed to be " + valuesCount);
   }
 }

@@ -39,6 +39,7 @@ public class MapDBSingleKVS<K extends WritableComparable, V extends Writable>
         .closeOnJvmShutdown()
         .deleteFilesAfterClose()
         .asyncWriteEnable()
+        .snapshotEnable()
         .make();
     File baseDirFile = new File(configuration.getBaseDir());
     if (baseDirFile.exists() && baseDirFile.isDirectory()) {
@@ -77,7 +78,11 @@ public class MapDBSingleKVS<K extends WritableComparable, V extends Writable>
   @Override
   public void put(K key, V value) throws Exception {
     if (iteratorReturned) {
-      throw new Exception("Trying to write after has returned iterator");
+      try {
+        throw new Exception("Trying to write after has returned iterator " + key.toString() + " -> " + value.toString());
+      }catch (Exception e){
+        e.printStackTrace();
+      }
     }
     dataDb.put(key, value);
   }

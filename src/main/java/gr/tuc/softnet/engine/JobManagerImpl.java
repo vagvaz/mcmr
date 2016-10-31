@@ -78,8 +78,8 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<JobCon
     private void runReadyTasks(MCJob job) {
         List<TaskConfiguration> taskConfigurations = job.getReadyToRunTaskConfigurations();
 
-        for(TaskConfiguration task : taskConfigurations){
-
+        for(int index = taskConfigurations.size()-1; index >= 0; index--){
+            TaskConfiguration task  = taskConfigurations.get(index);
             if(task.getNodeID().equals(configuration.getURI())){
                 taskManager.startTask(task);
             }else {
@@ -164,7 +164,7 @@ public class JobManagerImpl implements JobManager, Observable.OnSubscribe<JobCon
         }
         Map<String,NoMoreInputMessage> noMoreInputMessageMap = job.completeTask(cloud,id);
         for(Map.Entry<String,NoMoreInputMessage> entry : noMoreInputMessageMap.entrySet() ){
-            dataTransport.send(entry.getKey(),entry.getValue());
+            dataTransport.sendAndFlush(entry.getKey(),entry.getValue());
         }
 
         runReadyTasks(job);

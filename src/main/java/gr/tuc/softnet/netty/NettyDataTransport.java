@@ -1,5 +1,6 @@
 package gr.tuc.softnet.netty;
 
+import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
@@ -84,6 +85,8 @@ import java.util.concurrent.atomic.AtomicLong;
     nodes = new TreeMap<>();
     channelFutures = new HashSet<>();
     histogram = new HashMap<>();
+    mutexes = new HashedMap();
+    requests = new HashedMap();
 
     clientBootstrap = new Bootstrap();
     serverBootstrap = new ServerBootstrap();
@@ -270,16 +273,25 @@ import java.util.concurrent.atomic.AtomicLong;
     }
   }
 
-  @Subscribe public void setRequestResponse(RequestResponseEvent event) {
-    long requestID = event.getRequestID();
-    MCMessage message = event.getMessage();
-    String node = event.getNode();
-    Object mutex = mutexes.containsKey(requestID);
-    if (mutex != null) {
-      requests.put(requestID, message);
-      mutex.notify();
-    } else {
-      log.error("Received redudant request response " + requestID + " from " + node);
+  @Subscribe
+  @AllowConcurrentEvents
+  public void setRequestResponse(RequestResponseEvent event) {
+    try {
+      long requestID = event.getRequestID();
+      MCMessage message = event.getMessage();
+      String node = event.getNode();
+      Object mutex = mutexes.containsKey(requestID);
+      synchronized (mutex) {
+        if (mutex != null) {
+          requests.put(requestID, message);
+          mutex.notify();
+        } else {
+          log.error("Received redudant request response " + requestID + " from " + node);
+        }
+      }
+    }
+    catch(Exception e){
+      e.printStackTrace();
     }
   }
 
@@ -372,7 +384,7 @@ import java.util.concurrent.atomic.AtomicLong;
     if (response == null) {
       waitForResult(requestID);
     }
-    return requests.get(response);
+    return requests.get(requestID);
   }
 
   private void waitForResult(long requestID) {
@@ -409,7 +421,15 @@ import java.util.concurrent.atomic.AtomicLong;
     return this.globalConfiguration;
   }
 
-  @Override public KVSConfiguration createKVS(String nodeName, KVSConfiguration kvsConfiguration) {
+  @Override
+  public KVSConfiguration remoteCreateKVS(String node, KVSConfiguration kvsConfiguration) {
+    RemoteKVSCreate request = new RemoteKVSCreate(kvsConfiguration.getName(),kvsConfiguration);
+    long requestId = sendRequest(node,request);
+    KVSDescriptionResponse response = (KVSDescriptionResponse) getRequestResult(requestId);
+    return response.getConfiguration();
+  }
+
+  @Override public KVSConfiguration createKVS(String cacheName, KVSConfiguration kvsConfiguration) {
     List<String> clouds = kvsConfiguration.getClouds();
     List<Long> createRequests = new ArrayList<>();
     KVSConfiguration result = null;
@@ -419,16 +439,16 @@ import java.util.concurrent.atomic.AtomicLong;
     for (String cloud : clouds) {
       Map<String, NodeStatus> cloudNodes = getMicrocloudInfo(cloud);
       if (cloudNodes == null || cloudNodes.size() == 0) {
-        return new KVSConfiguration();
+        continue;
       }
 
       for (String node : cloudNodes.keySet()) {
         if (!node.equals(me)) {
-          KVSCreate message = new KVSCreate(nodeName, kvsConfiguration);
+          KVSCreate message = new KVSCreate(cacheName, kvsConfiguration);
           createRequests.add(sendRequest(node, message));
         } else {
           KVSConfiguration conf = kvsManager.bootstrapKVS(kvsConfiguration);
-          if (nodeName.equals(me)) {
+          if (node.equals(me)) {
             result = conf;
           }
         }
@@ -444,6 +464,7 @@ import java.util.concurrent.atomic.AtomicLong;
   @Override public void startTask(TaskConfiguration task) {
     StartTask taskMessage = new StartTask(task);
     this.sendAndFlush(task.getNodeTargetNode(),taskMessage);
+//    sendRequest(task.getNodeTargetNode(), taskMessage);
   }
 
   @Override public boolean cancelJob(String node, String jobID, List<String> nodes) {
@@ -489,11 +510,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
     ChannelFuture channel = nodes.get(nodeName);
     KVSBatchPut message = new KVSBatchPut(keyClass, valueClass, bytes, kvsName);
-    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
-    channel.channel().write(wrapper, channel.channel().voidPromise());
-    if(flush){
-      channel.channel().flush();
-    }
+    long requestId = sendRequest(nodeName, message);
+    EmptyKVSResponse response = (EmptyKVSResponse) getRequestResult(requestId);
+//    MCMessageWrapper wrapper = new MCMessageWrapper(message, getRequestID());
+//    channel.channel().write(wrapper, channel.channel().voidPromise());
+//    if(flush){
+//      channel.channel().flush();
+//    }
   }
 
   @Override public MCJobProxy submitJob(JobConfiguration configuration, String microcloud) {
@@ -551,7 +574,10 @@ import java.util.concurrent.atomic.AtomicLong;
     this.sendAndFlush(completedJob.getClient(),completed);
   }
 
+
+
   public long getRequestID() {
-    return requestID.incrementAndGet();
+    long result =  requestID.incrementAndGet();
+    return result;
   }
 }

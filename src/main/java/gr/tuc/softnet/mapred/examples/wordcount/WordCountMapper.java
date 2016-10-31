@@ -18,7 +18,6 @@ public class WordCountMapper extends MCMapper<IntWritable, Text, Text, IntWritab
                      Mapper<IntWritable, Text, Text, IntWritable>.Context context)
       throws IOException, InterruptedException {
 
-    System.out.println("key " + key.toString() + " value " + value.toString());
     for (String word : value.toString().split(" ")) {
       if (word != null && word.length() > 0) {
         context.write(new Text(word), new IntWritable(1));

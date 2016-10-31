@@ -45,14 +45,13 @@ public class WordCountSubmitter {
     c.setIsMapPipeline(isMapPipeline);
 
     c.setCombinerClass(WordCountReducer.class);
-    c.setUseLocalReducer(true);
-    c.setLocalReducerClass(WordCountReducer.class);
-    c.setLocalReduceOutputKeyClass(Text.class);
-    c.setLocalReduceOutputValueClass(IntWritable.class);
-    c.setIsLocalReducePipeline(isLocalReducePipeline);
+//    c.setLocalReducerClass(WordCountReducer.class);
+//    c.setLocalReduceOutputKeyClass(Text.class);
+//    c.setLocalReduceOutputValueClass(IntWritable.class);
+//    c.setIsLocalReducePipeline(isLocalReducePipeline);
     c.setFederationReducerClass(WordCountReducer.class);
     c.setFederationReduceOutputKeyClass(Text.class);
-    c.setFederationReduceOutputValueClass(Text.class);
+    c.setFederationReduceOutputValueClass(IntWritable.class);
     c.setIsFederationReducePipeline(isFederationReducePipeline);
     for(String cloud : clouds) {
       c.appendCloud(cloud);

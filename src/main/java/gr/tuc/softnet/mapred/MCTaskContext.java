@@ -24,6 +24,11 @@ import java.util.Map;
 public class MCTaskContext<KEYIN extends WritableComparable, VALUEIN extends Writable, KEYOUT extends WritableComparable, VALUEOUT extends Writable> implements  TaskInputOutputContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,MapContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT>,ReduceContext<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
     TaskConfiguration configuration;
     TaskStatus status;
+
+    public KVSProxy<KEYOUT, VALUEOUT> getOutputProxy() {
+        return output;
+    }
+
     KVSProxy<KEYOUT,VALUEOUT> output;
     KeyValueStore input;
     private Configuration hadoopConfiguration;

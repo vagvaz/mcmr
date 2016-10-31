@@ -1,6 +1,7 @@
 package gr.tuc.softnet.kvs;
 
 import gr.tuc.softnet.core.ConfStringConstants;
+import gr.tuc.softnet.mapred.MCReducer;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 
@@ -28,6 +29,7 @@ public class KVSConfiguration extends HierarchicalConfiguration implements Seria
     public KVSConfiguration(){
         super();
         setLocal(false);
+        setBaseDir(System.getProperty("java.io.tmpdir")+"/mcmcr/kvs/");
     }
 
     public KVSConfiguration(String name){
@@ -40,6 +42,9 @@ public class KVSConfiguration extends HierarchicalConfiguration implements Seria
     public KVSConfiguration(Configuration configuration){
         super();
         this.append(configuration);
+        if(this.getBaseDir() == null){
+            setBaseDir(System.getProperty("java.io.tmpdir")+"/mcmcr/kvs/");
+        }
 
     }
 

@@ -2,6 +2,7 @@ package gr.tuc.softnet.netty.handlers;
 
 import gr.tuc.softnet.core.StringConstants;
 import gr.tuc.softnet.engine.TaskConfiguration;
+import gr.tuc.softnet.kvs.KeyValueStore;
 import gr.tuc.softnet.netty.MCMessageHandler;
 import gr.tuc.softnet.netty.messages.*;
 import io.netty.channel.Channel;
@@ -31,10 +32,18 @@ public class EngineHandler extends MCMessageHandler {
         StartTask message = (StartTask)wrapper.getMessage();
         TaskConfiguration conf = message.getConf();
         this.taskManager.startTask(conf);
-        break;
+        return new MCMessageWrapper(new EmptyEngineRequestResponse(),-wrapper.getRequestId());
       }case StringConstants.JOB_COMPLETED:{
         JobCompleted message = (JobCompleted)wrapper.getMessage();
         this.jobManager.completedJob(message.getConf());
+        break;
+      }case StringConstants.NOMOREINPUT:{
+        NoMoreInputMessage message = (NoMoreInputMessage)wrapper.getMessage();
+        KeyValueStore store = this.kvsManager.getKVS(message.getKvsName());
+        if(store != null){
+          store.close();
+        }
+        break;
       }
     }
     return null;

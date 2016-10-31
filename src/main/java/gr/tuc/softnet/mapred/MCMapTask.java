@@ -3,12 +3,14 @@ package gr.tuc.softnet.mapred;
 import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
+import gr.tuc.softnet.kvs.KVSProxy;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
+import rx.observables.BlockingObservable;
 
 import java.io.IOException;
 import java.util.Map;
@@ -31,6 +33,9 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
   Subscriber<Map.Entry<INKEY, INVALUE>> subscriber = new Subscriber<Map.Entry<INKEY, INVALUE>>() {
     @Override public void onCompleted() {
       inputEnabled = false;
+      synchronized (mutex){
+        mutex.notifyAll();
+      }
     }
 
     @Override public void onError(Throwable e) {
@@ -43,7 +48,7 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
       }
     }
 
-    @Override public void onNext(Map.Entry<INKEY, INVALUE> entry) {
+    @Override synchronized public void onNext(Map.Entry<INKEY, INVALUE> entry) {
       try {
         mapper.map(entry.getKey(), entry.getValue(), mapContext);
       } catch (IOException e) {
@@ -64,8 +69,10 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
     super.initialize(configuration);
     mapperClass = configuration.getMapperClass();
     mapper = initializeMapper(mapperClass, keyClass, valueClass, outKeyClass, outValueClass);
-    Observable ob = Observable.create(inputStore);
+    BlockingObservable ob = Observable.from(inputStore.iterator()).toBlocking();
+//    BlockingObservable ob = Observable.create(inputStore).toBlocking();
     ob.subscribe(subscriber);
+    initialized();
   }
 
   @Override public boolean start() {
@@ -95,6 +102,8 @@ public class MCMapTask<INKEY extends WritableComparable, INVALUE extends Writabl
   @Override public void finalizeTask() {
     try {
       mapper.cleanup(mapContext);
+      KVSProxy proxy = ((MCMapper.Context)mapContext).getMapContext().getOutputProxy();
+      proxy.flush();
     } catch (IOException e) {
       e.printStackTrace();
     } catch (InterruptedException e) {

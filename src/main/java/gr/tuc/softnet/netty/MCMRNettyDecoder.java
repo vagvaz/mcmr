@@ -60,8 +60,6 @@ public class MCMRNettyDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     CompactObjectInputStream is = new CompactObjectInputStream(new ByteBufInputStream(frame), classResolver);
-    System.err.println("bbis " + is.available());
-    System.err.println("f " + frame.readableBytes());
     Object result = is.readObject();
     is.close();
     return result;

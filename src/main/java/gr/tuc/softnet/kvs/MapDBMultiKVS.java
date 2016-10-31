@@ -1,5 +1,6 @@
 package gr.tuc.softnet.kvs;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.mapdb.BTreeMap;
@@ -11,6 +12,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NavigableMap;
 
 import gr.tuc.softnet.core.WritableComparableSerializer;
 import gr.tuc.softnet.core.WritableSerializer;
@@ -25,8 +27,8 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
 
   private KVSConfiguration configuration;
   private DB theDb;
-  BTreeMap<K, Integer> keysDB;
-  BTreeMap<KeyWrapper<K>, V> dataDB;
+  HashedMap keysDB;
+  HashedMap dataDB;
   private File baseDirFile;
   private File keydbFile;
   private File datadbFile;
@@ -70,23 +72,25 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
           .transactionDisable()
           .closeOnJvmShutdown()
           .deleteFilesAfterClose()
-          .asyncWriteEnable()
+//          .asyncWriteEnable()
           .make();
       KeyWrapper tmpWrapper = new KeyWrapper(keyClass);
-      keysDB = theDb.createTreeMap(keydbFile.getName())
-          .keySerializer(new WritableComparableSerializer<K>(keyClass)).makeOrGet();
-      dataDB = theDb.createTreeMap(datadbFile.getName()).nodeSize(100)
-          .keySerializer(new WritableComparableSerializer<>(tmpWrapper))
-          .valueSerializer(new WritableSerializer<V>(valueClass)).makeOrGet();
+//      keysDB = theDb.createTreeMap(keydbFile.getName())
+//          .keySerializer(new WritableComparableSerializer<K>(keyClass)).makeOrGet();
+//      dataDB = theDb.createTreeMap(datadbFile.getName()).nodeSize(100)
+//          .keySerializer(new WritableComparableSerializer<>(tmpWrapper))
+//          .valueSerializer(new WritableSerializer<V>(valueClass)).makeOrGet();
+      keysDB = new HashedMap();
+      dataDB = new HashedMap();
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
   @Override
-  public void append(K key, V value) {
+  public synchronized void append(K key, V value) {
     try {
-      Integer counter = keysDB.get((key));
+      Integer counter = (Integer) keysDB.get(key);
       if (counter == null) {
         counter = 0;
       } else {
@@ -95,6 +99,8 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
       keysDB.put(key, counter);
       KeyWrapper wrapper = new KeyWrapper(key, counter);
       dataDB.put(wrapper, value);
+//      keysDB.getEngine().commit();
+//      dataDB.getEngine().commit();
       size++;
     } catch (Exception e) {
       e.printStackTrace();
@@ -131,6 +137,7 @@ public class MapDBMultiKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public Iterable<Map.Entry<K, Iterator<V>>> iterator() {
+
     return new MapDBMultiKVSIterator<>(dataDB, keysDB);
   }
 

@@ -6,6 +6,8 @@ package gr.tuc.softnet.netty.messages;
 public class MCMessageFactory {
   public static MCMessage getMessage(String type) {
     switch(type){
+      case EmptyEngineRequestResponse.TYPE:
+        return new EmptyEngineRequestResponse();
       case NoMoreInputMessage.TYPE:
         return new NoMoreInputMessage();
       case SubmitJob.TYPE:
@@ -18,6 +20,10 @@ public class MCMessageFactory {
         return new JobCompleted();
       case KillNode.TYPE:
         return new KillNode();
+      case KVSCreate.TYPE:
+        return new KVSCreate();
+      case RemoteKVSCreate.TYPE:
+        return new RemoteKVSCreate();
       case KVSBatchPut.TYPE:
         return new KVSBatchPut();
       case KVSContains.TYPE:
@@ -42,6 +48,8 @@ public class MCMessageFactory {
         return new StartTask();
       case TaskCompleted.TYPE:
         return new TaskCompleted();
+      case EmptyKVSResponse.TYPE:
+        return new EmptyKVSResponse();
       default:
         return null;
     }

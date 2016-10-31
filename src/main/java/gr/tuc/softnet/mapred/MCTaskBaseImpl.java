@@ -45,7 +45,7 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable, INVALUE e
   KeyValueStore inputStore;
   @Inject KVSManager kvsManager;
   TaskStatus status;
-  boolean inputEnabled;
+  boolean inputEnabled = true;
   Class<INKEY> keyClass;
   Class<INVALUE> valueClass;
   Class<OUTKEY> outKeyClass;
@@ -71,7 +71,11 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable, INVALUE e
     inputStore = kvsManager.getKVS(configuration.getInput());
     outputProxy = (KVSProxy) kvsManager.getKVSProxy(configuration.getOutput());
   }
-
+  @Override public void initialized(){
+    synchronized (this){
+      this.notifyAll();
+    }
+  }
   @Override public TaskStatus getStatus() {
     return status;
   }
@@ -157,7 +161,8 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable, INVALUE e
           //        mapper.initialize(pluginConfig, imanager);
           //                } catch (ClassNotFoundException e) {
           //                    e.printStackTrace();
-          result.setup(result.getReducerContext(taskContext));
+          reduceContext = result.getReducerContext(taskContext);
+          result.setup(reduceContext);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
           e.printStackTrace();
         }
@@ -183,7 +188,8 @@ public abstract class MCTaskBaseImpl<INKEY extends WritableComparable, INVALUE e
           //        mapper.initialize(pluginConfig, imanager);
           //                } catch (ClassNotFoundException e) {
           //                    e.printStackTrace();
-          result.setup(result.getReducerContext(taskContext));
+          reduceContext  =result.getReducerContext(taskContext);
+          result.setup(reduceContext);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
           e.printStackTrace();
         }

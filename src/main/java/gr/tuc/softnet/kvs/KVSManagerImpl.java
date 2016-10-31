@@ -3,6 +3,7 @@ package gr.tuc.softnet.kvs;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import gr.tuc.softnet.core.InjectorUtils;
+import gr.tuc.softnet.core.LQPConfiguration;
 import gr.tuc.softnet.core.NodeManager;
 import gr.tuc.softnet.netty.MCDataTransport;
 import gr.tuc.softnet.netty.messages.KVSDescriptionRequest;
@@ -45,9 +46,24 @@ import java.util.Map;
     KVSConfiguration kvsConfiguration = new KVSConfiguration(configuration);
     kvsConfiguration.setName(name);
     String node = nodeManager.resolveNode(name);
-    kvsConfiguration = dataTransport.createKVS(node, kvsConfiguration);
+    kvsConfiguration = dataTransport.remoteCreateKVS(node, kvsConfiguration);
     bootstrapRemoteKVS(kvsConfiguration);
     return find(name);
+  }
+
+  @Override public KVSConfiguration remoteCreateKVS(String name, KVSConfiguration configuration) {
+    KVSConfiguration kvsConfiguration = new KVSConfiguration(configuration);
+    kvsConfiguration.setName(name);
+    String node = nodeManager.resolveNode(name);
+    if (!node.equals(dataTransport.getConfiguration().getURI() )) {
+      System.err.println(
+        "ERROR: remoteCreate " + name + " is not handled by me " + dataTransport.getConfiguration().getURI() + " but "
+          + node);
+      kvsConfiguration = dataTransport.remoteCreateKVS(node, configuration);
+      return kvsConfiguration;
+    } else {
+      return dataTransport.createKVS(name, configuration);
+    }
   }
 
   private <K extends WritableComparable, V extends Writable> KeyValueStore<K, V> find(String name) {
@@ -69,6 +85,9 @@ import java.util.Map;
   }
 
   @Override public KVSConfiguration bootstrapKVS(KVSConfiguration kvsConfiguration) {
+    if (this.kvsWrapperMap.containsKey(kvsConfiguration.getName())) {
+      return kvsWrapperMap.get(kvsConfiguration.getName()).getConfiguration();
+    }
     KeyValueStore newKVS = factory.createNewInstance(kvsConfiguration);
     Class<? extends MCPartitioner> partitionerClass = kvsConfiguration.getPartitionerClass();
     MCPartitioner partitioner = null;
@@ -93,7 +112,7 @@ import java.util.Map;
 
   @Override public Class<? extends WritableComparable> getKeyClass(KeyValueStore store) {
     KVSWrapper wrapper = kvsWrapperMap.get(store.getName());
-    if(wrapper == null){
+    if (wrapper == null) {
       return null;
     }
     return (Class<? extends WritableComparable>) wrapper.getConfiguration().getKeyClass();
@@ -101,7 +120,7 @@ import java.util.Map;
 
   @Override public Class<? extends Writable> getValueClass(KeyValueStore store) {
     KVSWrapper wrapper = kvsWrapperMap.get(store.getName());
-    if(wrapper == null){
+    if (wrapper == null) {
       return null;
     }
     return (Class<? extends Writable>) wrapper.getConfiguration().getValueClass();

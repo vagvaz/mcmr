@@ -42,7 +42,7 @@ public abstract class DataLoader<K extends WritableComparable, V extends Writabl
     KVSManager kvsManager = injector.getInstance(KVSManager.class);
 
     kvsConfiguration = new KVSConfiguration(kvsName);  // TODO: Is the name ok?
-    kvsConfiguration.setCacheType(StringConstants.MAPDB);
+    kvsConfiguration.setCacheType(StringConstants.LEVELDB);
     kvsConfiguration.setMaterialized(true);
     kvsConfiguration.setKeyClass(keyClass);
     kvsConfiguration.setValueClass(valueClass);

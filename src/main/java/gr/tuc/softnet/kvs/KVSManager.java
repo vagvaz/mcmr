@@ -22,4 +22,6 @@ public interface KVSManager extends MCInitializable {
 
   Class<? extends WritableComparable> getKeyClass(KeyValueStore store);
   Class<? extends Writable> getValueClass(KeyValueStore store);
+
+  KVSConfiguration remoteCreateKVS(String name, KVSConfiguration configuraiton);
 }

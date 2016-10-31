@@ -83,7 +83,8 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
       keysDB = dbfactory.open(keydbFile, options.verifyChecksums(true));
       dataDB = dbfactory.open(datadbFile, options);
       writeOptions = new WriteOptions();
-      writeOptions.sync(false);
+//      writeOptions.sync(true);
+
 
       batch = dataDB.createWriteBatch();
     } catch (IOException e) {
@@ -103,7 +104,7 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
   }
 
   @Override
-  public void append(K key, V value) {
+  public synchronized void append(K key, V value) {
     try {
       size++;
       ByteArrayDataOutput keyBytes = ByteStreams.newDataOutput();
@@ -243,7 +244,7 @@ public class LevelDBMultiKVS<K extends WritableComparable, V extends Writable>
   @Override
   public Iterable<Map.Entry<K, Iterator<V>>> iterator() {
     flush();
-    return new LevelDBMultiKVSIterator<>(dataDB, keysDB, keyClass, valueClass);
+    return new LevelDBMultiKVSIterator<>(keysDB, dataDB, keyClass, valueClass);
   }
 
   @Override

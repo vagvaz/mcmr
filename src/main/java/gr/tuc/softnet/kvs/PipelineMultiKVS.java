@@ -93,6 +93,7 @@ public class PipelineMultiKVS<K, V> implements IntermediateKeyValueStore<K, V> {
 
   @Override
   public void close() {
+    doFlush();
     for (Subscriber<? super Map.Entry<K, Iterator<V>>> s : subscribers) {
       s.onCompleted();
     }

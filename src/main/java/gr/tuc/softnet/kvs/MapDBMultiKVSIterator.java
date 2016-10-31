@@ -4,12 +4,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.mapdb.BTreeMap;
 
-import java.util.AbstractMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ap0n on 7/4/2016.
@@ -18,13 +13,20 @@ public class MapDBMultiKVSIterator<K extends WritableComparable, V extends Writa
     implements Iterable<Map.Entry<K, Iterator<V>>>,
                Iterator<Map.Entry<K, Iterator<V>>> {
 
-  private BTreeMap<KeyWrapper<K>, V> dataDB;
-  private BTreeMap<K, Integer> keysDB;
+  private Map<KeyWrapper<K>, V> dataDB;
+  private Map<K, Integer> keysDB;
   private Iterator<Map.Entry<KeyWrapper<K>, V>> dataIterator;
   private Iterator<Map.Entry<K, Integer>> keysIterator;
   private Map.Entry<KeyWrapper<K>, V> currentEntry;
 
   public MapDBMultiKVSIterator(BTreeMap<KeyWrapper<K>, V> dataDB, BTreeMap<K, Integer> keysDB) {
+    this.dataDB = dataDB;
+    this.keysDB = keysDB;
+    dataIterator = dataDB.entrySet().iterator();
+    keysIterator = keysDB.entrySet().iterator();
+    currentEntry = null;
+  }
+  public MapDBMultiKVSIterator(Map<KeyWrapper<K>, V> dataDB, Map<K, Integer> keysDB) {
     this.dataDB = dataDB;
     this.keysDB = keysDB;
     dataIterator = dataDB.entrySet().iterator();
@@ -43,9 +45,9 @@ public class MapDBMultiKVSIterator<K extends WritableComparable, V extends Writa
   }
 
   @Override
-  public Map.Entry<K, Iterator<V>> next() {
+synchronized public Map.Entry<K, Iterator<V>> next() {
 
-    if (!dataIterator.hasNext()) {
+    if (!keysIterator.hasNext()) {
       throw new NoSuchElementException();
     }
 

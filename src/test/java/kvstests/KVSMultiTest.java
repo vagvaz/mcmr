@@ -21,18 +21,18 @@ import gr.tuc.softnet.kvs.MapDBMultiKVS;
 public class KVSMultiTest extends TestCase {
 
   protected MapDBMultiKVS<IntWritable, IntWritable> mapdbKVS;
-//  protected LevelDBMultiKVS<IntWritable, IntWritable> leveldbKVS;
+  protected LevelDBMultiKVS<IntWritable, IntWritable> leveldbKVS;
   protected KVSConfiguration mapDBConfiguration;
-//  protected KVSConfiguration levelDBConfiguration;
+  protected KVSConfiguration levelDBConfiguration;
 
   protected String mapKVSName;
-//  protected String levelKVSName;
+  protected String levelKVSName;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     mapKVSName = "mapKVSName";
-//    levelKVSName = "levelKVSName";
+    levelKVSName = "levelKVSName";
 
     mapDBConfiguration = new KVSConfiguration();
     mapDBConfiguration.setName(mapKVSName);
@@ -40,28 +40,28 @@ public class KVSMultiTest extends TestCase {
     mapDBConfiguration.setKeyClass(IntWritable.class);
     mapDBConfiguration.setValueClass(IntWritable.class);
 
-//    levelDBConfiguration = new KVSConfiguration();
-//    levelDBConfiguration.setName(levelKVSName);
-//    levelDBConfiguration.setBaseDir("/tmp/leveldb/");
-//    levelDBConfiguration.setKeyClass(IntWritable.class);
-//    levelDBConfiguration.setValueClass(IntWritable.class);
+    levelDBConfiguration = new KVSConfiguration();
+    levelDBConfiguration.setName(levelKVSName);
+    levelDBConfiguration.setBaseDir("/tmp/leveldb/");
+    levelDBConfiguration.setKeyClass(IntWritable.class);
+    levelDBConfiguration.setValueClass(IntWritable.class);
 
     mapdbKVS = new MapDBMultiKVS<>(mapDBConfiguration);
-//    leveldbKVS = new LevelDBMultiKVS<>(levelDBConfiguration);
+    leveldbKVS = new LevelDBMultiKVS<>(levelDBConfiguration);
   }
 
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     mapdbKVS.close();
-//    leveldbKVS.close();
+    leveldbKVS.close();
   }
 
   @Test
   public void testGetName() {
     System.out.println("KVSSingeTest.testGetName");
     assertEquals(mapKVSName, mapdbKVS.getName());
-//    assertEquals(levelKVSName, leveldbKVS.getName());
+    assertEquals(levelKVSName, leveldbKVS.getName());
   }
 
   @Test
@@ -84,7 +84,7 @@ public class KVSMultiTest extends TestCase {
     }
 
     assertEquals(keysCount * valueCountPerKey, mapdbKVS.size());
-//    assertEquals(keysCount * valueCountPerKey, leveldbKVS.size());
+    assertEquals(keysCount * valueCountPerKey, leveldbKVS.size());
   }
 
   @Test
@@ -102,7 +102,7 @@ public class KVSMultiTest extends TestCase {
 
     for (int i = 0; i < keysCount; i++) {
       assertTrue(mapdbKVS.contains(new IntWritable(i)));
-//      assertTrue(leveldbKVS.contains(new IntWritable(i)));
+      assertTrue(leveldbKVS.contains(new IntWritable(i)));
     }
   }
 
@@ -143,7 +143,7 @@ public class KVSMultiTest extends TestCase {
     for (Map.Entry<IntWritable, List<IntWritable>> e : data.entrySet()) {
       for (IntWritable i : e.getValue()) {
         mapdbKVS.append(e.getKey(), i);
-//        leveldbKVS.append(e.getKey(), i);
+        leveldbKVS.append(e.getKey(), i);
       }
     }
   }
@@ -152,27 +152,27 @@ public class KVSMultiTest extends TestCase {
     Iterator<Map.Entry<IntWritable, Iterator<IntWritable>>> mapDBIterator = mapdbKVS.iterator()
         .iterator();
 
-//    Iterator<Map.Entry<IntWritable, Iterator<IntWritable>>> levelIterator = leveldbKVS.iterator()
-//        .iterator();
+    Iterator<Map.Entry<IntWritable, Iterator<IntWritable>>> levelIterator = leveldbKVS.iterator()
+        .iterator();
 
     for (Map.Entry<IntWritable, List<IntWritable>> dataEntry : data.entrySet()) {
       assertTrue(mapDBIterator.hasNext());
-//      assertTrue(levelIterator.hasNext());
+      assertTrue(levelIterator.hasNext());
 
       Map.Entry<IntWritable, Iterator<IntWritable>> mapDBEntry = mapDBIterator.next();
       assertNotNull(mapDBEntry);
-//      Map.Entry<IntWritable, Iterator<IntWritable>> levelEntry = levelIterator.next();
-//      assertNotNull(levelEntry);
+      Map.Entry<IntWritable, Iterator<IntWritable>> levelEntry = levelIterator.next();
+      assertNotNull(levelEntry);
 
       Iterator<IntWritable> mapIteratorForKey = mapDBEntry.getValue();
-//      Iterator<IntWritable> levelIteratorForKey = levelEntry.getValue();
+      Iterator<IntWritable> levelIteratorForKey = levelEntry.getValue();
 
-      assertEquals(dataEntry.getKey(), mapDBEntry.getKey());
-//      assertEquals(dataEntry.getKey(), levelEntry.getKey());
+//      assertEquals(dataEntry.getKey(), mapDBEntry.getKey());
+      assertEquals(dataEntry.getKey(), levelEntry.getKey());
 
       for (IntWritable expectedValue : dataEntry.getValue()) {
-        assertEquals(expectedValue, mapIteratorForKey.next());
-//        assertEquals(expectedValue, levelIteratorForKey.next());
+//        assertEquals(expectedValue, mapIteratorForKey.next());
+        assertEquals(expectedValue, levelIteratorForKey.next());
       }
     }
   }

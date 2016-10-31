@@ -14,10 +14,7 @@ import org.iq80.leveldb.ReadOptions;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -60,10 +57,12 @@ public class LevelDBSingleKVSIterator<K extends WritableComparable, V extends Wr
   @Override
   public Map.Entry<K, V> next() {
     if (!iterator.hasNext()) {
-      return null;
+      throw new NoSuchElementException("No other element LeveldbSingle KVs iterator ");
     }
 
     Map.Entry<byte[], byte[]> entry = iterator.next();
+    currentKey = ReflectionUtils.newInstance(keyClass, new Configuration());
+    currentValue = ReflectionUtils.newInstance(valueClass, new Configuration());
     ByteArrayDataInput input = ByteStreams.newDataInput(entry.getKey());
     try {
       currentKey.readFields(input);

@@ -3,6 +3,7 @@ package gr.tuc.softnet.netty.messages;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import gr.tuc.softnet.core.StringConstants;
 import io.netty.buffer.ByteBuf;
 
 import java.io.ByteArrayInputStream;
@@ -13,7 +14,7 @@ import java.io.UnsupportedEncodingException;
  * Created by vagvaz on 06/04/16.
  */
 public class NoMoreInputMessage extends MCMessage {
-  public static final String TYPE = "noMoreInput";
+  public static final String TYPE = StringConstants.NOMOREINPUT;
   private  String kvsName;
   private  String taskID;
   private String nodeID;
@@ -27,6 +28,30 @@ public class NoMoreInputMessage extends MCMessage {
     this.nodeID = nodeID;
     this.kvsName = kvsName;
     this.taskID = taskID;
+  }
+
+  public String getKvsName() {
+    return kvsName;
+  }
+
+  public void setKvsName(String kvsName) {
+    this.kvsName = kvsName;
+  }
+
+  public String getTaskID() {
+    return taskID;
+  }
+
+  public void setTaskID(String taskID) {
+    this.taskID = taskID;
+  }
+
+  public String getNodeID() {
+    return nodeID;
+  }
+
+  public void setNodeID(String nodeID) {
+    this.nodeID = nodeID;
   }
 
   @Override public byte[] toBytes() {

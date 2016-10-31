@@ -10,6 +10,7 @@ import rx.Observable;
 public interface MCTask extends IDable,Runnable {
     boolean start();
     void initialize(TaskConfiguration configuration);
+    void initialized();
     TaskStatus getStatus();
 
     boolean cancel();
@@ -26,4 +27,5 @@ public interface MCTask extends IDable,Runnable {
     void complete(TaskState state);
     String getInput();
     String getOutput();
+
 }

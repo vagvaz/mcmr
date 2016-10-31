@@ -1,10 +1,7 @@
 package gr.tuc.softnet.engine;
 
 import com.google.inject.Inject;
-import gr.tuc.softnet.core.ConfStringConstants;
-import gr.tuc.softnet.core.MCConfiguration;
-import gr.tuc.softnet.core.NodeManager;
-import gr.tuc.softnet.core.NodeStatus;
+import gr.tuc.softnet.core.*;
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.netty.messages.NoMoreInputMessage;
 import org.apache.commons.collections.map.HashedMap;
@@ -138,6 +135,7 @@ public class MCJobImpl implements MCJob {
     result.setFederationReducerClass(jobConf.getFederationReducerClass());
     result.setIsBatch(!jobConf.isFederationReducePipeline());
     result.setJobConfiguration(this.jobConf.getJobProperties());
+    result.setIsBatch(!jobConf.isFederationReducePipeline());
     return  result;
   }
 
@@ -160,6 +158,7 @@ public class MCJobImpl implements MCJob {
     result.setLocalReducerClass(jobConf.getLocalReducerClass());
     result.setIsBatch(!jobConf.isLocalReducePipeline());
     result.setJobConfiguration(this.jobConf.getJobProperties());
+    result.setIsBatch(!jobConf.isLocalReducePipeline());
     return  result;
   }
 
@@ -195,6 +194,11 @@ public class MCJobImpl implements MCJob {
     result.setValueClass(jobConf.getLocalReduceOutputValueClass());
     result.setName(jobConf.getJobID()+".federation_in");
     result.setMaterialized(jobConf.isFederationReducePipeline());
+    if(jobConf.isFederationReducePipeline()) {
+      result.setCacheType(StringConstants.PIPELINE);
+    }else{
+      result.setCacheType(StringConstants.LEVELDB_INTERM);
+    }
     result.setLocal(false);
     return result;
   }
@@ -206,9 +210,20 @@ public class MCJobImpl implements MCJob {
     result.setValueClass(jobConf.getMapOutputValueClass());
     if(jobConf.hasLocalReduce()) {
       result.setName(jobConf.getJobID() + ".local_reduce_in");
+      if(jobConf.isLocalReducePipeline()) {
+        result.setCacheType(StringConstants.PIPELINE_INTERM);
+      }else{
+        result.setCacheType(StringConstants.LEVELDB_INTERM);
+      }
     }else{
       result.setName(jobConf.getJobID() + ".federation_in");
+      if(jobConf.isFederationReducePipeline()) {
+        result.setCacheType(StringConstants.PIPELINE_INTERM);
+      }else{
+        result.setCacheType(StringConstants.LEVELDB_INTERM);
+      }
     }
+
     result.setMaterialized(jobConf.isLocalReducePipeline());
     result.setLocal(false);
     return result;
@@ -221,6 +236,7 @@ public class MCJobImpl implements MCJob {
     result.setName(jobConf.getOutput());
     result.setMaterialized(true);
     result.setLocal(false);
+    result.setCacheType(StringConstants.LEVELDB);
     return result;
   }
 
@@ -302,14 +318,14 @@ public class MCJobImpl implements MCJob {
           for(Map.Entry<String,Map<String,TaskConfiguration>> entry : localReduceTasks.entrySet()){
             result.addAll(invokelocalReduceTasks(entry.getKey()));
           }
-          runningLocalReduceTasks.clear();
+          localReduceTasks.clear();
         }
 
         if(jobConf.isLocalReducePipeline()){
-          for(Map.Entry<String,Map<String,TaskConfiguration>> entry : localReduceTasks.entrySet()) {
+          for(Map.Entry<String,Map<String,TaskConfiguration>> entry : federationReduceTasks.entrySet()) {
             result.addAll(invokeFederationReduceTasks(entry.getKey()));
           }
-          runningFederationReduceTasks.clear();
+          federationReduceTasks.clear();
         }
         currentStage = Stage.MAP;
         break;
@@ -460,6 +476,9 @@ public class MCJobImpl implements MCJob {
       String microcloud) {
     Map<String,NoMoreInputMessage> result = new HashedMap();
     Map<String,TaskConfiguration> tasks = runningFederationReduceTasks.get(microcloud);
+    if(tasks == null){
+      logger.error("No Running Reduce tasks were  found!");
+    }
     for(Map.Entry<String,TaskConfiguration> entry : tasks.entrySet()){
       result.put(entry.getValue().getNodeID(), new NoMoreInputMessage(entry.getValue().getNodeID(), entry.getValue().getInput(), entry.getValue().getID()));
     }

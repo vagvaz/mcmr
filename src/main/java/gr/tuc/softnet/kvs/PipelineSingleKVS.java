@@ -77,6 +77,7 @@ public class PipelineSingleKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public void close() {
+    doFlush();
     for (Subscriber<? super Map.Entry<K, V>> s : subscribers) {
       s.onCompleted();
     }

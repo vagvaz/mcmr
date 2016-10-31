@@ -38,6 +38,7 @@ public interface MCDataTransport  {
     void send(String target, String cacheName, byte[] bytes);
 
     void send(String target, MCMessage message);
+    void sendAndFlush(String target, MCMessage message);
 
     long sendRequest(String target, MCMessage message);
 
@@ -103,4 +104,6 @@ public interface MCDataTransport  {
     public void addClient(Channel channel, String nodeName);
 
     void jobCompleted(JobConfiguration configuration);
+
+  KVSConfiguration remoteCreateKVS(String node, KVSConfiguration kvsConfiguration);
 }

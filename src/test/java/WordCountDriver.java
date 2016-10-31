@@ -10,6 +10,9 @@ import gr.tuc.softnet.mapred.examples.LineDataLoader;
 import gr.tuc.softnet.mapred.examples.wordcount.WordCountSubmitter;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import rx.exceptions.Exceptions;
 
 import java.io.File;
 import java.util.Iterator;
@@ -39,18 +42,25 @@ public class WordCountDriver {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    Thread.sleep(3000);
+    Exceptions.throwIfFatal(new Exception());
     KeyValueStore store = InjectorUtils.getInjector().getInstance(KVSManager.class).getKVS("documents");
     Iterator<Map.Entry> it = store.iterator().iterator();
     while(it.hasNext()){
       Map.Entry entry = it.next();
       System.out.println(entry.getKey() + "     " + entry.getValue());
     }
-    MCJobProxy jobProxy = WordCountSubmitter.submit(false,false,false,"documents","words",
-      nodemanager.getMicrocloudInfo().keySet());
 
-    jobProxy.waitForCompletion();
-      Thread.sleep(3000);
-    System.out.println("Bye Bye");
+      MCJobProxy jobProxy = WordCountSubmitter.submit(false, false, false, "documents", "words",
+        nodemanager.getMicrocloudInfo().keySet());
+
+      jobProxy.waitForCompletion();
+      KVSManager kvsManager = InjectorUtils.getInjector().getInstance(KVSManager.class);
+      Iterable<Map.Entry<WritableComparable, Writable>> iterator = kvsManager.getKVS("words").iterator();
+      for (Map.Entry<WritableComparable, Writable> entry : iterator) {
+        System.out.println(entry.getKey() + " v: " + entry.getValue());
+      }
+//      kvsManager.destroyKVS("words");
+      System.out.println("Bye Bye");
+
   }
 }

@@ -33,6 +33,7 @@ public class KeyWrapper<K extends WritableComparable> implements WritableCompara
         this.counter = counter;
     }
 
+    public KeyWrapper(){}
 
     public KeyWrapper(Class<K> keyClass){
         this.keyClass = keyClass;

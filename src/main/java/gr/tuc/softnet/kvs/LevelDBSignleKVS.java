@@ -108,19 +108,23 @@ public class LevelDBSignleKVS<K extends WritableComparable, V extends Writable>
 
   @Override
   public void flush() {
-    dataDB.write(batch, writeOptions);
-    try {
-      batch.close();
-    } catch (IOException e) {
-      e.printStackTrace();
+    if (batchCount > 0) {
+      dataDB.write(batch, writeOptions);
+      batchCount = 0;
+      try {
+        batch.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      batch = dataDB.createWriteBatch();
     }
-    batch = dataDB.createWriteBatch();
   }
 
   @Override
   public void put(K key, V value) throws Exception {
     if (iteratorReturned) {
-      throw new Exception("Trying to write after has returned iterator");
+//      throw new Exception("Trying to write after has returned iterator");
+      System.err.println("Trying to write after has returned iterator");
     }
 
     ByteArrayDataOutput keyBytes = ByteStreams.newDataOutput();

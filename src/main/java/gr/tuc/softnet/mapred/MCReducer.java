@@ -39,6 +39,10 @@ public abstract class MCReducer<KEYIN extends WritableComparable, VALUEIN extend
     public class Context
             extends Reducer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>.Context {
 
+        public MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> getReduceContext() {
+            return reduceContext;
+        }
+
         protected MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext;
 
         public Context(ReduceContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> reduceContext)

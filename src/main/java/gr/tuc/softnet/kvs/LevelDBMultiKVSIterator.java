@@ -15,18 +15,13 @@ import org.iq80.leveldb.ReadOptions;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.AbstractMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ap0n on 7/4/2016.
  */
 public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Writable>
-    implements Iterable<Map.Entry<K, Iterator<V>>>,
-               Iterator<Map.Entry<K, Iterator<V>>> {
+  implements Iterable<Map.Entry<K, Iterator<V>>>, Iterator<Map.Entry<K, Iterator<V>>> {
 
   private DB keysDB;
   private DB dataDB;
@@ -38,8 +33,7 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
   private Configuration hadoopConfiguration;
   private ReadOptions readOptions;
 
-  public LevelDBMultiKVSIterator(DB keysDB, DB dataDB, Class<K> keyClass,
-                                 Class<V> valueClass) {
+  public LevelDBMultiKVSIterator(DB keysDB, DB dataDB, Class<K> keyClass, Class<V> valueClass) {
     this.keysDB = keysDB;
     this.dataDB = dataDB;
     this.keyClass = keyClass;
@@ -48,99 +42,131 @@ public class LevelDBMultiKVSIterator<K extends WritableComparable, V extends Wri
     keysIterator.seekToFirst();
     readOptions = new ReadOptions();
     readOptions.fillCache(false);
-//    dataIterator = dataDB.iterator(readOptions);
+    //    dataIterator = dataDB.iterator(readOptions);
     dataIterator = dataDB.iterator();
     dataIterator.seekToFirst();
     currentEntry = null;
     hadoopConfiguration = new Configuration();
   }
 
-  @Override
-  public Iterator<Map.Entry<K, Iterator<V>>> iterator() {
+  @Override public Iterator<Map.Entry<K, Iterator<V>>> iterator() {
 
-    System.out.println("Keys:");
-    while (keysIterator.hasNext()) {
-      Map.Entry<byte[], byte[]> keysEntry = keysIterator.next();
-      K key = ReflectionUtils.newInstance(keyClass, hadoopConfiguration);
-      ByteArrayDataInput input = ByteStreams.newDataInput(keysEntry.getKey());
-      try {
-        key.readFields(input);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      System.out.println("key = " + key.toString());
-      System.out.println("count = " + new BigInteger(keysEntry.getValue()));
-    }
-
-    System.out.println("Values: ");
-    while (dataIterator.hasNext()) {
-      Map.Entry<byte[], byte[]> dataEntry = dataIterator.next();
-
-      byte[] wrapperBytes = dataEntry.getKey();
-      KeyWrapper<K> wrapper = new KeyWrapper<>(keyClass);
-      ByteArrayDataInput wrapperInput = ByteStreams.newDataInput(wrapperBytes);
-      try {
-        wrapper.readFields(wrapperInput);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-
-      System.out.println(new BigInteger(dataEntry.getValue()));
-      V value = ReflectionUtils.newInstance(valueClass, hadoopConfiguration);
-      ByteArrayDataInput input = ByteStreams.newDataInput(dataEntry.getValue());
-      try {
-        value.readFields(input);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      System.out.println("value = " + value.toString());
-    }
+//    System.out.println("Keys:");
+//    while (keysIterator.hasNext()) {
+//      Map.Entry<byte[], byte[]> keysEntry = keysIterator.next();
+//      K key = ReflectionUtils.newInstance(keyClass, hadoopConfiguration);
+//      ByteArrayDataInput input = ByteStreams.newDataInput(keysEntry.getKey());
+//      try {
+//        key.readFields(input);
+//      } catch (IOException e) {
+//        e.printStackTrace();
+//      }
+//      System.out.println("key = " + key.toString());
+//      System.out.println("count = " + Integer.parseInt(new String(keysEntry.getValue())));
+//    }
+//
+////    System.out.println("Values: ");
+////    while (dataIterator.hasNext()) {
+////      Map.Entry<byte[], byte[]> dataEntry = dataIterator.next();
+////
+////      byte[] wrapperBytes = dataEntry.getKey();
+////      KeyWrapper<K> wrapper = new KeyWrapper<>(keyClass);
+////      ByteArrayDataInput wrapperInput = ByteStreams.newDataInput(wrapperBytes);
+////      try {
+////        wrapper.readFields(wrapperInput);
+////      } catch (IOException e) {
+////        e.printStackTrace();
+////      }
+////
+////      V value = ReflectionUtils.newInstance(valueClass, hadoopConfiguration);
+////      ByteArrayDataInput input = ByteStreams.newDataInput(dataEntry.getValue());
+////      try {
+////        value.readFields(input);
+////      } catch (IOException e) {
+////        e.printStackTrace();
+////      }
+////      System.out.println("value = " + value.toString());
+////    }
+    keysIterator.seekToFirst();
+    dataIterator.seekToFirst();
     return this;
   }
 
-  @Override
-  public boolean hasNext() {
+  @Override public boolean hasNext() {
     return keysIterator.hasNext();
   }
 
-  @Override
-  public Map.Entry<K, Iterator<V>> next() {
-    if (!dataIterator.hasNext()) {
+  //  @Override
+  //  public Map.Entry<K, Iterator<V>> next() {
+  //    if (!dataIterator.hasNext()) {
+  //      try {
+  //        dataIterator.close();
+  //      } catch (IOException e) {
+  //        e.printStackTrace();
+  //      }
+  //      throw new NoSuchElementException("LeveldMulti KVS ");
+  //    }
+  //
+  //    if (currentEntry == null) {
+  //      currentEntry = dataIterator.next();
+  //    }
+  //
+  //    Set<V> values = null;
+  //    K currentKey = null;
+  //    try {
+  //      currentKey = getFromBytes(keysIterator.next().getKey(), keyClass);
+  //
+  //      values = new HashSet<>();
+  //
+  //      while (currentKey == getFromBytes(currentEntry.getKey(), keyClass)) {
+  //        values.add(getFromBytes(currentEntry.getValue(), valueClass));
+  //        if (!dataIterator.hasNext()) {
+  //          break;
+  //        }
+  //        currentEntry = dataIterator.next();
+  //      }
+  //    } catch (IOException e) {
+  //      e.printStackTrace();
+  //    }
+  //
+  //    if (values == null) {
+  //      return null;
+  //    }
+  //
+  //    return new AbstractMap.SimpleEntry<>(currentKey, values.iterator());
+  //  }
+
+  @Override public Map.Entry<K, Iterator<V>> next() {
+    if (!keysIterator.hasNext()) {
       try {
-        dataIterator.close();
+        keysIterator.close();
       } catch (IOException e) {
         e.printStackTrace();
       }
-      return null;
+      throw new NoSuchElementException("LeveldMulti KVS ");
     }
 
+    currentEntry = keysIterator.next();
     if (currentEntry == null) {
       currentEntry = dataIterator.next();
     }
 
-    Set<V> values = null;
+
     K currentKey = null;
+    Iterator<V> iterator = null;
     try {
-      currentKey = getFromBytes(keysIterator.next().getKey(), keyClass);
+      currentKey = getFromBytes(currentEntry.getKey(), keyClass);
+      Integer integer = Integer.parseInt(new String(currentEntry.getValue()));
+      iterator =
+        new LeveldBMultiKVSValuesIterator<K, V>(dataIterator, currentKey, integer, keyClass,
+          valueClass);
 
-      values = new HashSet<>();
 
-      while (currentKey == getFromBytes(currentEntry.getKey(), keyClass)) {
-        values.add(getFromBytes(currentEntry.getValue(), valueClass));
-        if (!dataIterator.hasNext()) {
-          break;
-        }
-        currentEntry = dataIterator.next();
-      }
     } catch (IOException e) {
       e.printStackTrace();
     }
 
-    if (values == null) {
-      return null;
-    }
-
-    return new AbstractMap.SimpleEntry<>(currentKey, values.iterator());
+    return new AbstractMap.SimpleEntry<>(currentKey, iterator);
   }
 
   private <T extends Writable> T getFromBytes(byte[] bytes, Class<T> tClass) throws IOException {

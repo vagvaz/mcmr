@@ -4,6 +4,7 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import gr.tuc.softnet.core.InjectorUtils;
+import gr.tuc.softnet.kvs.IntermediateKeyValueStore;
 import gr.tuc.softnet.kvs.KVSConfiguration;
 import gr.tuc.softnet.kvs.KVSManager;
 import gr.tuc.softnet.kvs.KeyValueStore;
@@ -11,6 +12,7 @@ import gr.tuc.softnet.netty.MCMessageHandler;
 import gr.tuc.softnet.netty.RequestResponseEvent;
 import gr.tuc.softnet.netty.messages.*;
 import io.netty.channel.Channel;
+import org.apache.commons.configuration.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -44,7 +46,7 @@ public class KVSHandler extends MCMessageHandler {
       result = new KVSDescriptionResponse(kvsConfiguration);
     } else if (wrapper.getType().equals(KVSDescriptionResponse.TYPE)) {
       RequestResponseEvent event =
-        new RequestResponseEvent(transport.getNodeName(channel), wrapper.getRequestId(),
+        new RequestResponseEvent(transport.getNodeName(channel), -wrapper.getRequestId(),
           wrapper.getMessage());
       transport.getEventBus().post(event);
     } else if (wrapper.getType().equals(KVSCreate.TYPE)) {
@@ -52,11 +54,18 @@ public class KVSHandler extends MCMessageHandler {
       KVSConfiguration configuration = request.getConfiguration();
       KVSConfiguration kvsConfiguration = kvsManager.bootstrapKVS(configuration);
       result = new KVSDescriptionResponse(kvsConfiguration);
+    } else if (wrapper.getType().equals(RemoteKVSCreate.TYPE)) {
+      RemoteKVSCreate request = (RemoteKVSCreate) wrapper.getMessage();
+      KVSConfiguration configuraiton = request.getConfiguration();
+      KVSConfiguration kvsConfiguration =
+        kvsManager.remoteCreateKVS(configuraiton.getName(), configuraiton);
+      result = new KVSDescriptionResponse(kvsConfiguration);
     } else if (wrapper.getType().equals(KVSBatchPut.TYPE)) {
       KVSBatchPut batchput = (KVSBatchPut) wrapper.getMessage();
       ByteArrayDataInput input = ByteStreams.newDataInput(batchput.getData());
       String kvsName = batchput.getKvsName();
       KeyValueStore store = kvsManager.getKVS(kvsName);
+      boolean intemediate_destination = store instanceof IntermediateKeyValueStore;
       if (store == null) {
         log.error("BatchPut Received from " + transport.getNodeName(channel) + " for " + kvsName
           + " that does not exist");
@@ -76,13 +85,17 @@ public class KVSHandler extends MCMessageHandler {
           try {
             key.readFields(dataInput);
             value.readFields(dataInput);
-            store.put(key, value);
+            if (intemediate_destination) {
+              ((IntermediateKeyValueStore) store).append(key, value);
+            } else {
+              store.put(key, value);
+            }
           } catch (Exception e) {
             e.printStackTrace();
           }
         }
       }
-
+      result = new EmptyKVSResponse();
     } else if (wrapper.getType().equals(KVSContains.TYPE)) {
       KVSContains request = (KVSContains) wrapper.getMessage();
       String kvsName = request.getKvsname();
@@ -132,16 +145,21 @@ public class KVSHandler extends MCMessageHandler {
       if (store == null) {
         log.error("KVSGet Received from " + transport.getNodeName(channel) + " for " + kvsName
           + " that does not exist");
-      }else{
+      } else {
         try {
-          store.put(key,value);
+          store.put(key, value);
         } catch (Exception e) {
           e.printStackTrace();
         }
       }
-    }
-    else{
-      log.error("Unknown KVS message " + wrapper.getType() + " from " + transport.getNodeName(channel));
+    } else if (wrapper.getType().equals(EmptyKVSResponse.TYPE)) {
+      RequestResponseEvent event =
+        new RequestResponseEvent(transport.getNodeName(channel), -wrapper.getRequestId(),
+          wrapper.getMessage());
+      transport.getEventBus().post(event);
+    } else {
+      log.error(
+        "Unknown KVS message " + wrapper.getType() + " from " + transport.getNodeName(channel));
     }
     if (result != null) {
       return new MCMessageWrapper(result, -wrapper.getRequestId());

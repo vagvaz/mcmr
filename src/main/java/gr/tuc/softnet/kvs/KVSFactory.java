@@ -27,8 +27,7 @@ public class KVSFactory {
 
     String type = configuration.getString(ConfStringConstants.CACHE_TYPE,StringConstants.PIPELINE);
 //        systemConfiguration.conf().getString(ConfStringConstants.CACHE_TYPE));
-    if (!configuration.isMaterialized())
-      type = StringConstants.PIPELINE;
+
     if (type.equals(StringConstants.MAPDB)) {
       logger.info(
           "Create " + configuration.getName() + " MapDB kvs in " + configuration.getBaseDir());

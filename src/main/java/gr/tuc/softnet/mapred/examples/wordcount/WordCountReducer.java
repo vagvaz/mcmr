@@ -56,6 +56,7 @@ public class WordCountReducer extends MCReducer<Text, IntWritable, Text, IntWrit
         e.printStackTrace();
       }
     } else {
+      System.out.println("key " + key.toString() + " value " + result);
       context.write(key, new IntWritable(result));
     }
   }
@@ -69,6 +70,7 @@ public class WordCountReducer extends MCReducer<Text, IntWritable, Text, IntWrit
       while (iterator.hasNext()) {
         Map.Entry<Text, IntWritable> entry = iterator.next();
         context.write(entry.getKey(), entry.getValue());
+        System.out.println("key " + entry.getKey().toString() + " value " + entry.getValue());
       }
     }
   }

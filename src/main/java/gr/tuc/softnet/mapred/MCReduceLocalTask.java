@@ -5,6 +5,7 @@ import gr.tuc.softnet.core.PrintUtilities;
 import gr.tuc.softnet.engine.MCTask;
 import gr.tuc.softnet.engine.TaskConfiguration;
 import gr.tuc.softnet.engine.TaskStatus;
+import gr.tuc.softnet.kvs.KVSProxy;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -42,7 +43,7 @@ public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends 
         @Override
         public void onNext(Map.Entry<INKEY, Iterable<INVALUE>> inkeyIterableEntry) {
             try {
-                reducer.reduce(inkeyIterableEntry.getKey(),inkeyIterableEntry.getValue(),context);
+                reducer.reduce(inkeyIterableEntry.getKey(),inkeyIterableEntry.getValue(),reduceContext);
             } catch (IOException e) {
                 status.setException(e);
                 inputEnabled = false;
@@ -61,6 +62,7 @@ public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends 
         reducerClass = configuration.getLocalReducerClass();
         reducer = initializeLocalReducer(reducerClass,keyClass,valueClass,outKeyClass,outValueClass);
         Observable.create(inputStore).subscribe(subscriber);
+        initialized();
     }
 
 
@@ -95,6 +97,8 @@ public class MCReduceLocalTask<INKEY extends WritableComparable,INVALUE extends 
     public void finalizeTask() {
         try {
             reducer.cleanup(context);
+            KVSProxy proxy = ((MCReducer.Context)context).getReduceContext().getOutputProxy();
+            proxy.flush();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

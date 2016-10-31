@@ -30,6 +30,10 @@ public class MCMapper<KEYIN extends WritableComparable, VALUEIN extends Writable
     public class Context
             extends Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT>.Context {
 
+        public MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> getMapContext() {
+            return mapContext;
+        }
+
         protected MCTaskContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> mapContext;
 
         public Context(MapContext<KEYIN, VALUEIN, KEYOUT, VALUEOUT> mapContext) {
