@@ -45,10 +45,10 @@ public class WordCountSubmitter {
     c.setIsMapPipeline(isMapPipeline);
 
     c.setCombinerClass(WordCountReducer.class);
-//    c.setLocalReducerClass(WordCountReducer.class);
-//    c.setLocalReduceOutputKeyClass(Text.class);
-//    c.setLocalReduceOutputValueClass(IntWritable.class);
-//    c.setIsLocalReducePipeline(isLocalReducePipeline);
+    c.setLocalReducerClass(WordCountReducer.class);
+    c.setLocalReduceOutputKeyClass(Text.class);
+    c.setLocalReduceOutputValueClass(IntWritable.class);
+    c.setIsLocalReducePipeline(isLocalReducePipeline);
     c.setFederationReducerClass(WordCountReducer.class);
     c.setFederationReduceOutputKeyClass(Text.class);
     c.setFederationReduceOutputValueClass(IntWritable.class);

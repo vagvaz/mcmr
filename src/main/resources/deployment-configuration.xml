@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<leads-processor-bootstrap>
+    <!--The local directory where the basic xml configuration for the components is found-->
+    <baseDir>/tmp/boot-conf/</baseDir>
+    <!-- The remote directory where the configuration files will be saved-->
+    <remoteDir>/tmp/</remoteDir>
+
+    <adresses>
+        <MC name='local1' credentials="vagvaz">
+            <node name='vagvaz-laptop' privateIp='192.168.0.2' port='10000' interface="wlan0">192.168.0.2</node>
+        </MC>
+        <MC name='vagulis' credentials="vagvaz">
+            <node name='localhost' privateIp='127.0.0.1' port='10001' interface="lo">127.0.0.1</node>
+        </MC>
+    </adresses>
+
+
+    <kvs>
+        <type>leveldb</type>
+        <leveldb>
+            <blocksize>1</blocksize>
+            <cachesize>32</cachesize>
+        </leveldb>
+        <mapdb>
+
+        </mapdb>
+        <default_dir>/tmp/mcmapreduce/</default_dir>
+        <buffer_threshold>1000000</buffer_threshold>
+        <buffer_threshold_type>bytes</buffer_threshold_type>
+    </kvs>
+    <engine>
+        <processing>
+            <batch_threads_min>2</batch_threads_min>
+            <batch_threads_max>2</batch_threads_max>
+            <pipeline_threads_min>2</pipeline_threads_min>
+            <pipeline_threads_max>2</pipeline_threads_max>
+            <transfer_discard>false</transfer_discard>
+            <combiner_bypass>false</combiner_bypass>
+        </processing>
+        <communication>
+            <async.communication>true</async.communication>
+            <buffer.size.threshold>10</buffer.size.threshold>
+            <buffer.tuple.threshold>10</buffer.tuple.threshold>
+            <maintain.statistics>true</maintain.statistics>
+        </communication>
+        <mapreduce>
+            <combiner.percent>50</combiner.percent>
+            <combiner.size.threshold>20</combiner.size.threshold>
+            <combiner.tuple.threshold>2000</combiner.tuple.threshold>
+        </mapreduce>
+    </engine>
+
+    <!--Connection information for the password-less ssh-->
+    <ssh>
+        <credentials>
+            <id>vagvaz</id>
+            <username>vagvaz</username>
+            <!--<password>testpass</password> -->
+            <rsa>/home/vagvaz/id_rsa</rsa>
+            <!-- a filename -->
+        </credentials>
+    </ssh>
+</leads-processor-bootstrap>

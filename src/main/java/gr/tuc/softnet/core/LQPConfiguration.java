@@ -45,6 +45,7 @@ public class LQPConfiguration implements MCConfiguration {
   }
 
   public  void initialize(String base_dir, boolean lite) {
+    this.baseDir = base_dir;
     synchronized (mutex) {
       if (initialized)
         return;
@@ -105,7 +106,7 @@ public class LQPConfiguration implements MCConfiguration {
         this.conf()
             .setProperty("node.ip", ConfigurationUtilities.resolveIp(config.getString("node.interface")));
       this.conf().addConfiguration(config);
-      this.getConfigurations().put(this.getBaseDir() + "conf/processor.xml", config);
+      this.getConfigurations().put(this.getBaseDir() + "/processor.xml", config);
     } catch (ConfigurationException e) {
       e.printStackTrace();
     }

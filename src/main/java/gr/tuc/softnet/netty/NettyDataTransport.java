@@ -72,6 +72,7 @@ import java.util.concurrent.atomic.AtomicLong;
   private Map<Channel, String> clientMap;
   private EventBus eventBus;
   private NodeStatus mineNodeStatus;
+  String baseDir;
 
   @Override public void initialize() {
     //    NettyDataTransport.globalConfiguration = globalConfiguration;
@@ -103,8 +104,7 @@ import java.util.concurrent.atomic.AtomicLong;
       .childHandler(serverChannelInitializer);
     cloudInfo = new TreeMap<>();
     HierarchicalConfiguration conf =
-      (HierarchicalConfiguration) globalConfiguration.getConfigurations()
-        .get("conf/conf/processor.xml");
+      (HierarchicalConfiguration) globalConfiguration.conf().getConfiguration(0);
     List<HierarchicalConfiguration> mcs = conf.configurationsAt("network.mc");
     for (HierarchicalConfiguration c : mcs) {
       SortedMap<String, NodeStatus> newCloud = new TreeMap<>();
